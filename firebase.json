@@ -1,146 +1,73 @@
 {
-  "hosting": [
-    {
-      "site": "freeocr-staging-app",
-      "public": "src/frontend/build/web",
-      "cleanUrls": true,
-      "trailingSlash": false,
-      "ignore": [
-        "firebase.json",
-        "**/.*",
-        "**/node_modules/**"
-      ],
-      "rewrites": [
-        {
-          "source": "/api/**",
-          "run": {
-            "serviceId": "freeocr-api",
-            "region": "us-central1"
+  "hosting": {
+    "site": "freepdftoolz",
+    "public": "src/frontend/build/web",
+    "cleanUrls": true,
+    "trailingSlash": false,
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "/api/**",
+        "run": {
+          "serviceId": "freepdftoolz-api",
+          "region": "us-central1"
+        }
+      },
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ],
+    "headers": [
+      {
+        "source": "**",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, no-store, must-revalidate"
           }
-        },
-        {
-          "source": "**",
-          "destination": "/index.html"
-        }
-      ],
-      "headers": [
-        {
-          "source": "**",
-          "headers": [
-            {
-              "key": "Cache-Control",
-              "value": "no-cache, no-store, must-revalidate"
-            }
-          ]
-        },
-        {
-          "source": "assets/**",
-          "headers": [
-            {
-              "key": "Cache-Control",
-              "value": "max-age=31536000, public"
-            }
-          ]
-        },
-        {
-          "source": "**/*.@(css|wasm|png|jpg|jpeg|gif|ico|svg|woff2|ttf|otf|webp)",
-          "headers": [
-            {
-              "key": "Cache-Control",
-              "value": "max-age=31536000, public"
-            }
-          ]
-        },
-        {
-          "source": "**/*.@(js|json|html)",
-          "headers": [
-            {
-              "key": "Cache-Control",
-              "value": "no-cache, no-store, must-revalidate"
-            }
-          ]
-        },
-        {
-          "source": "**/@(main.dart.js|flutter.js|flutter_bootstrap.js|flutter_service_worker.js|version.json|index.html)",
-          "headers": [
-            {
-              "key": "Cache-Control",
-              "value": "no-cache, no-store, must-revalidate"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "site": "freepdftoolz",
-      "public": "src/frontend/build/freepdftoolz_web",
-      "cleanUrls": true,
-      "trailingSlash": false,
-      "ignore": [
-        "firebase.json",
-        "**/.*",
-        "**/node_modules/**"
-      ],
-      "rewrites": [
-        {
-          "source": "/api/**",
-          "run": {
-            "serviceId": "freepdftoolz-api",
-            "region": "us-central1"
+        ]
+      },
+      {
+        "source": "assets/**",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "max-age=31536000, public"
           }
-        },
-        {
-          "source": "**",
-          "destination": "/index.html"
-        }
-      ],
-      "headers": [
-        {
-          "source": "**",
-          "headers": [
-            {
-              "key": "Cache-Control",
-              "value": "no-cache, no-store, must-revalidate"
-            }
-          ]
-        },
-        {
-          "source": "assets/**",
-          "headers": [
-            {
-              "key": "Cache-Control",
-              "value": "max-age=31536000, public"
-            }
-          ]
-        },
-        {
-          "source": "**/*.@(css|wasm|png|jpg|jpeg|gif|ico|svg|woff2|ttf|otf|webp)",
-          "headers": [
-            {
-              "key": "Cache-Control",
-              "value": "max-age=31536000, public"
-            }
-          ]
-        },
-        {
-          "source": "**/*.@(js|json|html)",
-          "headers": [
-            {
-              "key": "Cache-Control",
-              "value": "no-cache, no-store, must-revalidate"
-            }
-          ]
-        },
-        {
-          "source": "**/@(main.dart.js|flutter.js|flutter_bootstrap.js|flutter_service_worker.js|version.json|index.html)",
-          "headers": [
-            {
-              "key": "Cache-Control",
-              "value": "no-cache, no-store, must-revalidate"
-            }
-          ]
-        }
-      ]
-    }
-  ]
+        ]
+      },
+      {
+        "source": "**/*.@(css|wasm|png|jpg|jpeg|gif|ico|svg|woff2|ttf|otf|webp)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "max-age=31536000, public"
+          }
+        ]
+      },
+      {
+        "source": "**/*.@(js|json|html)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, no-store, must-revalidate"
+          }
+        ]
+      },
+      {
+        "source": "**/@(main.dart.js|flutter.js|flutter_bootstrap.js|flutter_service_worker.js|version.json|index.html)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, no-store, must-revalidate"
+          }
+        ]
+      }
+    ]
+  }
 }

@@ -1,710 +1,153 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
-
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <title>Contact Us — freeOCR.me</title>
-  <meta name="title" content="Contact Us — freeOCR.me | Official Support & Inquiries">
-  <meta name="description"
-    content="Contact freeOCR.me support. Inquire about document OCR conversions, submit bug reports, reach our Data Protection Officer, or explore partnerships.">
+  <title>Contact Us — FreePDFToolz Support & Inquiries — FreePDFToolz.me</title>
+  <meta name="description" content="Contact FreePDFToolz.me technical support, report conversion bugs, request enterprise API access, or contact our security and privacy team.">
+  <link rel="canonical" href="https://freepdftoolz.me/contact">
   <meta name="robots" content="index, follow">
-  <link rel="canonical" href="https://freeocr.me/contact">
-
-  <!-- OpenGraph -->
+  
   <meta property="og:type" content="website">
-  <meta property="og:url" content="https://freeocr.me/contact">
-  <meta property="og:title" content="Contact Us — freeOCR.me">
-  <meta property="og:description"
-    content="Reach freeOCR.me support and engineering team. Direct email channels and fast response times.">
-  <meta property="og:image" content="https://freeocr.me/icons/Icon-512.png">
-
+  <meta property="og:url" content="https://freepdftoolz.me/contact">
+  <meta property="og:title" content="Contact Us — FreePDFToolz Support & Inquiries — FreePDFToolz.me">
+  <meta property="og:description" content="Contact FreePDFToolz.me technical support, report conversion bugs, request enterprise API access, or contact our security and privacy team.">
+  <meta property="og:site_name" content="FreePDFToolz.me">
+  
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Contact Us — FreePDFToolz Support & Inquiries — FreePDFToolz.me">
+  <meta name="twitter:description" content="Contact FreePDFToolz.me technical support, report conversion bugs, request enterprise API access, or contact our security and privacy team.">
+  
   <!-- Favicon -->
-  <link rel="icon" type="image/png" href="/favicon.png">
-  <link rel="shortcut icon" href="/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
   <link rel="manifest" href="/manifest.json">
-
-  <!-- JSON-LD Structured Data for ContactPage -->
+  
+  <!-- Google Analytics 4 (GA4) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-W4D8V33FX1"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-W4D8V33FX1', { 'send_page_view': true });
+  </script>
+  
+  <!-- Schema.org JSON-LD -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "ContactPage",
-    "name": "Contact freeOCR.me",
-    "url": "https://freeocr.me/contact",
-    "description": "Customer support and developer contact points for freeOCR.me web platform.",
-    "mainEntity": {
+    "headline": "Contact Us — FreePDFToolz Support & Inquiries",
+    "description": "Contact FreePDFToolz.me technical support, report conversion bugs, request enterprise API access, or contact our security and privacy team.",
+    "mainEntityOfPage": "https://freepdftoolz.me/contact",
+    "publisher": {
       "@type": "Organization",
-      "name": "freeOCR.me",
-      "url": "https://freeocr.me",
-      "email": "support@freeocr.me"
+      "name": "FreePDFToolz.me",
+      "url": "https://freepdftoolz.me/"
     }
   }
   </script>
-
-  <!-- Theme Script -->
-  <script>
-    (function () {
-      try {
-        var saved = localStorage.getItem('freeocr_theme');
-        var theme = saved || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-        document.documentElement.setAttribute('data-theme', theme);
-      } catch (e) { }
-    })();
-  </script>
-
-  <!-- Google AdSense Monetization Tag -->
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6775900998665017"
-    crossorigin="anonymous"></script>
-
-  <!-- Google Analytics 4 (GA4) Telemetry Tag -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-E852V95BXB"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag() { dataLayer.push(arguments); }
-    gtag('js', new Date());
-    gtag('config', 'G-E852V95BXB', { 'send_page_view': true });
-  </script>
-
+  
   <style>
-    :root {
-      --bg: #ffffff;
-      --card-bg: #f8fafc;
-      --card-border: #e2e8f0;
-      --text-main: #0f172a;
-      --text-muted: #64748b;
-      --heading: #0f172a;
-      --accent: #6366f1;
-      --accent-light: #4f46e5;
-      --border: #e2e8f0;
-      --header-bg: rgba(255, 255, 255, 0.88);
-      --footer-bg: #f1f5f9;
-      --toggle-bg: rgba(99, 102, 241, 0.08);
-      --toggle-color: #6366f1;
-      --input-bg: #ffffff;
-      --input-border: #cbd5e1;
-    }
 
-    [data-theme="dark"] {
-      --bg: #0b0f19;
-      --card-bg: #111827;
-      --card-border: rgba(255, 255, 255, 0.08);
-      --text-main: #f3f4f6;
-      --text-muted: #9ca3af;
-      --heading: #ffffff;
-      --accent: #6366f1;
-      --accent-light: #818cf8;
-      --border: rgba(255, 255, 255, 0.08);
-      --header-bg: rgba(11, 15, 25, 0.88);
-      --footer-bg: rgba(15, 23, 42, 0.95);
-      --toggle-bg: rgba(255, 255, 255, 0.1);
-      --toggle-color: #f3f4f6;
-      --input-bg: #1e293b;
-      --input-border: rgba(255, 255, 255, 0.12);
-    }
-
-    * {
-      box-sizing: border-box;
+    html, body {
       margin: 0;
       padding: 0;
-    }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      background-color: var(--bg);
-      color: var(--text-main);
-      line-height: 1.6;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      transition: background-color 0.2s ease, color 0.2s ease;
-    }
-
-    header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0.85rem 2rem;
-      border-bottom: 1px solid var(--border);
-      background: var(--header-bg);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      position: sticky;
-      top: 0;
-      z-index: 100;
-    }
-
-    .logo {
-      display: flex;
-      align-items: center;
-      gap: 0.65rem;
-      font-size: 1.2rem;
-      font-weight: 800;
-      letter-spacing: -0.5px;
-      color: var(--heading);
-      text-decoration: none;
-    }
-
-    .logo-icon {
-      width: 32px;
-      height: 32px;
-      border-radius: 8px;
-      background: rgba(99, 102, 241, 0.12);
-      border: 1px solid rgba(99, 102, 241, 0.3);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--accent);
-      font-weight: bold;
-    }
-
-    .logo span {
-      color: var(--accent);
-    }
-
-    .nav-wrapper {
-      display: flex;
-      align-items: center;
-      gap: 1.25rem;
-    }
-
-    nav a {
-      color: var(--text-muted);
-      text-decoration: none;
-      font-size: 0.95rem;
-      font-weight: 500;
-      transition: color 0.2s;
-    }
-
-    nav a:hover,
-    nav a.active {
-      color: var(--accent);
-      font-weight: 600;
-    }
-
-    .theme-toggle-btn {
-      background: var(--toggle-bg);
-      border: none;
-      color: var(--toggle-color);
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .container {
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 2.5rem 1.5rem;
-      flex: 1;
-    }
-
-    .badge {
-      display: inline-block;
-      padding: 0.25rem 0.75rem;
-      background: rgba(99, 102, 241, 0.12);
-      color: var(--accent);
-      border: 1px solid rgba(99, 102, 241, 0.3);
-      border-radius: 20px;
-      font-size: 0.75rem;
-      font-weight: 700;
-      letter-spacing: 0.05em;
-      margin-bottom: 1rem;
-    }
-
-    h1 {
-      font-size: 2.25rem;
-      font-weight: 800;
-      letter-spacing: -0.03em;
-      color: var(--heading);
-      margin-bottom: 0.75rem;
-      line-height: 1.2;
-    }
-
-    .subtitle {
-      font-size: 1.15rem;
-      color: var(--text-muted);
-      margin-bottom: 2rem;
-      line-height: 1.5;
-    }
-
-    .channels-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1.25rem;
-      margin-bottom: 2rem;
-    }
-
-    .channel-card {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 14px;
-      padding: 1.5rem;
-      display: flex;
-      align-items: flex-start;
-      gap: 1rem;
-      text-decoration: none;
-      transition: transform 0.15s ease, border-color 0.15s ease;
-    }
-
-    .channel-card:hover {
-      transform: translateY(-2px);
-      border-color: var(--accent);
-    }
-
-    .channel-icon {
-      width: 44px;
-      height: 44px;
-      border-radius: 10px;
-      background: rgba(99, 102, 241, 0.12);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.4rem;
-      color: var(--accent);
-      flex-shrink: 0;
-    }
-
-    .channel-info h3 {
-      font-size: 1rem;
-      font-weight: 700;
-      color: var(--heading);
-      margin-bottom: 0.2rem;
-    }
-
-    .channel-info p.email {
-      font-size: 0.92rem;
-      font-weight: 600;
-      color: var(--accent);
-      margin-bottom: 0.2rem;
-    }
-
-    .channel-info p.desc {
-      font-size: 0.82rem;
-      color: var(--text-muted);
-    }
-
-    .contact-box {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 16px;
-      padding: 2rem;
-      margin-bottom: 2rem;
-    }
-
-    .contact-box h2 {
-      font-size: 1.3rem;
-      font-weight: 700;
-      color: var(--heading);
-      margin-bottom: 0.5rem;
-    }
-
-    .contact-box p {
-      color: var(--text-muted);
-      font-size: 0.95rem;
-      margin-bottom: 1.5rem;
-    }
-
-    .form-group {
-      margin-bottom: 1.25rem;
-    }
-
-    label {
-      display: block;
-      font-size: 0.88rem;
-      font-weight: 600;
-      color: var(--heading);
-      margin-bottom: 0.4rem;
-    }
-
-    input[type="text"],
-    input[type="email"],
-    select,
-    textarea {
       width: 100%;
-      padding: 0.75rem 1rem;
-      border-radius: 8px;
-      border: 1px solid var(--input-border);
-      background-color: var(--input-bg);
-      color: var(--text-main);
-      font-size: 0.95rem;
-      font-family: inherit;
-      outline: none;
-      transition: border-color 0.2s;
+      background-color: #0b0f19;
+      color: #94a3b8;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.7;
+      overflow-x: hidden;
     }
-
-    input:focus,
-    select:focus,
-    textarea:focus {
-      border-color: var(--accent);
-    }
-
-    button.submit-btn {
-      background-color: var(--accent);
-      color: #ffffff;
-      border: none;
-      border-radius: 8px;
-      padding: 0.85rem 1.75rem;
-      font-size: 1rem;
-      font-weight: 700;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      transition: background-color 0.2s;
-    }
-
-    button.submit-btn:hover {
-      background-color: var(--accent-light);
-    }
-
-    .alert-success {
-      display: none;
-      background: rgba(16, 185, 129, 0.12);
-      border: 1px solid rgba(16, 185, 129, 0.3);
-      color: #10b981;
-      padding: 1rem;
-      border-radius: 8px;
-      margin-top: 1rem;
-      font-weight: 600;
-    }
-
-    footer {
-      background: var(--footer-bg);
-      border-top: 1px solid var(--border);
-      padding: 3rem 2rem 2rem;
-      margin-top: 4rem;
-    }
-
-    .footer-grid {
-      max-width: 1100px;
-      margin: 0 auto;
-      display: grid;
-      grid-template-columns: 2fr 1fr 1fr 1fr;
-      gap: 2rem;
-    }
-
-    .footer-col h3 {
-      font-size: 0.9rem;
-      font-weight: 700;
-      color: var(--heading);
-      margin-bottom: 1rem;
-    }
-
-    .footer-links {
-      list-style: none;
-    }
-
-    .footer-links li {
-      margin-bottom: 0.5rem;
-    }
-
-    .footer-links a {
-      color: var(--text-muted);
-      text-decoration: none;
-      font-size: 0.88rem;
-      transition: color 0.2s;
-    }
-
-    .footer-links a:hover {
-      color: var(--accent);
-    }
-
-    .footer-bottom {
-      max-width: 1100px;
-      margin: 2rem auto 0;
-      padding-top: 1.5rem;
-      border-top: 1px solid var(--border);
-      text-align: center;
-      color: var(--text-muted);
-      font-size: 0.82rem;
-    }
-
-    .social-row {
-      display: flex;
-      gap: 0.75rem;
-      margin-top: 1rem;
-    }
-
-    .social-btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 36px;
-      height: 36px;
-      border-radius: 8px;
-      background: var(--toggle-bg);
-      color: var(--heading);
-      text-decoration: none;
-      font-size: 0.9rem;
-      transition: background 0.2s;
-    }
-
-    .social-btn:hover {
-      background: rgba(99, 102, 241, 0.2);
-    }
-
-    .social-modal-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.55);
-      backdrop-filter: blur(4px);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 9999;
-    }
-
-    .social-modal-box {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 24px;
-      max-width: 440px;
-      width: 90%;
-      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.25);
-    }
-
-    @media (max-width: 768px) {
-      .channels-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .footer-grid {
-        grid-template-columns: 1fr;
-        gap: 1.5rem;
-      }
-
-      header {
-        padding: 0.75rem 1rem;
-      }
-
-      .container {
-        padding: 1.5rem 1rem;
-      }
-    }
+    h1, h2, h3, h4 { color: #f8fafc; }
+    h1 { font-size: 2.2rem; font-weight: 800; letter-spacing: -0.8px; margin-bottom: 1.2rem; line-height: 1.25; }
+    h2 { font-size: 1.5rem; font-weight: 700; margin-top: 2.5rem; margin-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 0.5rem; }
+    h3 { font-size: 1.15rem; font-weight: 600; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+    p { margin-bottom: 1.2rem; font-size: 1.02rem; }
+    ul, ol { margin-left: 1.5rem; margin-bottom: 1.5rem; }
+    li { margin-bottom: 0.5rem; }
+    strong { color: #f1f5f9; }
+    code { background: rgba(99,102,241,0.12); color: #c7d2fe; padding: 2px 6px; border-radius: 4px; font-size: 0.9em; font-family: monospace; }
+    a { color: #818cf8; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; }
+    .badge { display: inline-block; padding: 3px 10px; border-radius: 12px; background: rgba(99,102,241,0.18); border: 1px solid rgba(99,102,241,0.3); color: #818cf8; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 8px; }
+    .tip-box { display: flex; gap: 1rem; background: rgba(99,102,241,0.08); border-left: 4px solid #6366f1; border-radius: 8px; padding: 1.2rem 1.5rem; margin: 1.5rem 0; }
+    .tip-icon { font-size: 1.5rem; }
+    table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 0.95rem; }
+    th, td { border: 1px solid rgba(255,255,255,0.08); padding: 10px 14px; text-align: left; }
+    th { background: rgba(255,255,255,0.04); color: #f1f5f9; font-weight: 600; }
+    .active { color: #818cf8 !important; font-weight: 700 !important; }
+    .tool-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.25rem; margin-top: 1.5rem; }
+    .tool-card { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 1.5rem; transition: transform 0.2s, border-color 0.2s; text-decoration: none; display: flex; flex-direction: column; }
+    .tool-card:hover { transform: translateY(-3px); border-color: rgba(99,102,241,0.4); }
+    .tool-icon { width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 12px; }
+    .tool-title { font-size: 1.2rem; font-weight: 700; color: #f8fafc; margin-bottom: 8px; }
+    .tool-desc { font-size: 0.92rem; color: #94a3b8; line-height: 1.55; flex-grow: 1; }
+    
   </style>
 </head>
-
 <body>
-
-  <header>
-    <a href="/" class="logo">
-      <div class="logo-icon">📄</div>
-      <div>freeOCR<span>.me</span></div>
-    </a>
-    <div class="nav-wrapper">
-      <nav>
-        <a href="/">Home</a>
-        <a href="/about">About</a>
-        <a href="/knowledge-base">Knowledge Base</a>
-        <a href="/contact" class="active">Contact</a>
+    <header style="max-width: 1200px; margin: 0 auto; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.06);">
+      <a href="/" style="display: flex; align-items: center; gap: 10px; text-decoration: none;">
+        <div style="width: 32px; height: 32px; border-radius: 10px; background: rgba(99,102,241,0.18); border: 1px solid rgba(99,102,241,0.35); display: flex; align-items: center; justify-content: center; color: #818cf8; font-weight: 800; font-size: 15px; font-family: sans-serif;">🛠️</div>
+        <span style="font-size: 1.25rem; font-weight: 800; color: #f8fafc; letter-spacing: -0.5px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">FreePDF<span style="color: #6366f1;">Toolz.me</span></span>
+      </a>
+      <nav style="display: flex; align-items: center; gap: 18px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 0.95rem;">
+        <a href="/hub" style="color: #94a3b8; text-decoration: none; font-weight: 500;">All 16 Tools</a>
+        <a href="/about" style="color: #94a3b8; text-decoration: none; font-weight: 500;">About</a>
+        <a href="/contact" style="color: #94a3b8; text-decoration: none; font-weight: 500;" class="active">Contact</a>
+        <a href="/privacy" style="color: #94a3b8; text-decoration: none; font-weight: 500;">Privacy</a>
       </nav>
-      <button class="theme-toggle-btn" id="themeToggleBtn" aria-label="Toggle Theme">
-        <span id="sunIcon" style="display:none;">☀️</span>
-        <span id="moonIcon">🌙</span>
-      </button>
-    </div>
-  </header>
+    </header>
 
-  <main class="container">
-    <div class="badge">CONTACT & SUPPORT</div>
-    <h1>Get in Touch with freeOCR.me</h1>
-    <p class="subtitle">Have questions about document OCR, encounter an issue, or need privacy compliance assistance?
-      Our team is here to assist.</p>
+  <main style="max-width: 1000px; margin: 40px auto 80px; padding: 0 20px;">
 
-    <div class="channels-grid">
-      <a href="mailto:support@freeocr.me" class="channel-card">
-        <div class="channel-icon">🎧</div>
-        <div class="channel-info">
-          <h3>General Support</h3>
-          <p class="email">support@freeocr.me</p>
-          <p class="desc">Technical inquiries & assistance. Turnaround: 24–48 hours.</p>
-        </div>
-      </a>
-      <a href="mailto:privacy@freeocr.me" class="channel-card">
-        <div class="channel-icon">⚖️</div>
-        <div class="channel-info">
-          <h3>Privacy & Legal</h3>
-          <p class="email">privacy@freeocr.me</p>
-          <p class="desc">GDPR, CCPA, and data protection officer requests.</p>
-        </div>
-      </a>
-    </div>
-
-    <div class="contact-box">
-      <h2>Send Us a Message</h2>
-      <p>Submit your details below and our team will get back to you directly.</p>
-
-      <form id="contactForm">
-        <div class="form-group">
-          <label for="name">Your Name</label>
-          <input type="text" id="name" name="name" required placeholder="Enter your full name">
-        </div>
-        <div class="form-group">
-          <label for="email">Email Address</label>
-          <input type="email" id="email" name="email" required placeholder="name@example.com">
-        </div>
-        <div class="form-group">
-          <label for="category">Inquiry Category</label>
-          <select id="category" name="category">
-            <option>General Inquiry</option>
-            <option>Bug Report / OCR Conversion Issue</option>
-            <option>Feature Suggestion</option>
-            <option>Privacy & GDPR / Data Protection</option>
-            <option>Advertising & Partnerships</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="subject">Subject</label>
-          <input type="text" id="subject" name="subject" required placeholder="Brief summary of your inquiry">
-        </div>
-        <div class="form-group">
-          <label for="message">Your Message</label>
-          <textarea id="message" name="message" rows="5" required
-            placeholder="Provide as much detail as possible..."></textarea>
-        </div>
-        <button type="submit" id="submitBtn" class="submit-btn">Send Message ✉️</button>
-      </form>
-
-      <div id="successMsg" class="alert-success" style="display:none; margin-top: 1.5rem; padding: 1rem; border-radius: 8px; background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; color: #10b981;">
-        ✓ Thank you! Your message has been received. Our support team will reply within 24–48 hours.
+    <article>
+      <h1>Contact FreePDFToolz Technical Support</h1>
+      <p class="lead">Have a technical inquiry, feature request, bug report, or partnership proposal? Our engineering team is dedicated to maintaining high uptime, document fidelity, and platform security.</p>
+      
+      <div class="card">
+        <h3>Direct Support Channels</h3>
+        <p>For immediate technical assistance or bug reporting with specific PDF files, reach out via our dedicated channels:</p>
+        <ul>
+          <li><strong>General Support & Bug Inquiries:</strong> <a href="mailto:support@freepdftoolz.me">support@freepdftoolz.me</a></li>
+          <li><strong>Data Privacy & Security Officer:</strong> <a href="mailto:privacy@freepdftoolz.me">privacy@freepdftoolz.me</a></li>
+          <li><strong>API & Enterprise Integrations:</strong> <a href="mailto:api@freepdftoolz.me">api@freepdftoolz.me</a></li>
+          <li><strong>Bug Bounty & Vulnerability Disclosure:</strong> <a href="mailto:security@freepdftoolz.me">security@freepdftoolz.me</a></li>
+        </ul>
       </div>
-      <div id="errorMsg" class="alert-error" style="display:none; margin-top: 1.5rem; padding: 1rem; border-radius: 8px; background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; color: #ef4444;">
-        ⚠️ Failed to send message. Please email support@freeocr.me directly.
+
+      <h2>Frequently Answered Inquiries</h2>
+      <h3>1. Where can I report a corrupted PDF conversion or parsing error?</h3>
+      <p>If a specific PDF fails to process (e.g. invalid cross-reference table, unsupported font encoding, or encrypted permissions), please email <a href="mailto:support@freepdftoolz.me">support@freepdftoolz.me</a> with the document page count, file size, and the exact error code displayed. If the document does not contain sensitive personal data, attaching a sample page helps our team diagnose font embedding edge cases within 24 hours.</p>
+
+      <h3>2. How quickly does customer support respond?</h3>
+      <p>Our engineering team monitors incoming inquiries 7 days a week. Technical bugs affecting platform uptime receive priority handling within 4 hours. General user inquiries and feature requests are answered within 24 to 48 business hours.</p>
+
+      <h3>3. Do you offer an API for programmatic batch PDF operations?</h3>
+      <p>Yes. We provide high-throughput REST API endpoints for automated PDF merging, lossless compression, and document conversions. Contact <a href="mailto:api@freepdftoolz.me">api@freepdftoolz.me</a> with your estimated monthly page volume to request sandbox API keys and technical documentation.</p>
+
+      <h3>4. Security & Vulnerability Reporting</h3>
+      <p>We take information security and RAM-disk ephemeral isolation seriously. If you discover a potential vulnerability, memory leak, or security flaw, please contact <a href="mailto:security@freepdftoolz.me">security@freepdftoolz.me</a> immediately with proof-of-concept steps. We practice coordinated vulnerability disclosure and respond to critical reports within 12 hours.</p>
+    </article>
+    
+    <footer style="margin-top: 4rem; padding-top: 2rem; border-top: 1px solid rgba(255,255,255,0.08); display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1.5rem; font-size: 0.9rem; color: #64748b; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+      <div>
+        <div style="font-weight: 700; color: #f8fafc; margin-bottom: 4px;">FreePDFToolz.me</div>
+        <div>&copy; 2026 FreePDFToolz.me &bull; Ephemeral Linux RAM-Disk PDF Suite &bull; All Rights Reserved.</div>
       </div>
-    </div>
+      <nav style="display: flex; flex-wrap: wrap; gap: 1.25rem;">
+        <a href="/hub" style="color: #818cf8; text-decoration: none;">All 16 PDF Tools</a>
+        <a href="/kb/pdf-merge-guide" style="color: #818cf8; text-decoration: none;">Merge Guide</a>
+        <a href="/kb/pdf-compression-guide" style="color: #818cf8; text-decoration: none;">Compression Guide</a>
+        <a href="/kb/cryptographic-redaction" style="color: #818cf8; text-decoration: none;">Redaction Guide</a>
+        <a href="/about" style="color: #818cf8; text-decoration: none;">About Us</a>
+        <a href="/contact" style="color: #818cf8; text-decoration: none;">Contact</a>
+        <a href="/privacy" style="color: #818cf8; text-decoration: none;">Privacy Policy</a>
+        <a href="/terms" style="color: #818cf8; text-decoration: none;">Terms of Service</a>
+      </nav>
+    </footer>
   </main>
-
-
-  <footer>
-    <div class="footer-grid">
-      <div class="footer-col">
-        <h3>freeOCR.me</h3>
-        <p style="color: var(--text-muted); font-size: 0.88rem; line-height: 1.5;">
-          Privacy-First Ephemeral OCR Platform.<br>
-          Files processed in volatile Linux RAM disk.
-        </p>
-        <div class="social-row">
-          <a href="https://x.com/freeocrme" class="social-btn" title="Twitter / X" target="_blank" rel="noopener">𝕏</a>
-          <a href="https://instagram.com/freeocrme" class="social-btn" title="Instagram" target="_blank"
-            rel="noopener">📷</a>
-          <a href="https://facebook.com/freeOCRme" class="social-btn" title="Facebook" target="_blank"
-            rel="noopener">fb</a>
-        </div>
-      </div>
-      <div class="footer-col">
-        <h3>Navigation</h3>
-        <ul class="footer-links">
-          <li><a href="/">Home</a></li>
-          <li><a href="/about">About Us</a></li>
-          <li><a href="/knowledge-base">Knowledge Base</a></li>
-        </ul>
-      </div>
-      <div class="footer-col">
-        <h3>Engines</h3>
-        <ul class="footer-links">
-          <li><a href="https://github.com/PaddlePaddle/PaddleOCR" target="_blank" rel="noopener">Baidu OCR</a></li>
-          <li><a href="https://github.com/tesseract-ocr/tesseract" target="_blank" rel="noopener">Tesseract</a></li>
-          <li><a href="https://github.com/ocrmypdf/OCRmyPDF" target="_blank" rel="noopener">OCRmyPDF</a></li>
-          <li><a href="https://github.com/pymupdf/PyMuPDF" target="_blank" rel="noopener">PyMuPDF</a></li>
-        </ul>
-      </div>
-      <div class="footer-col">
-        <h3>Legal & Support</h3>
-        <ul class="footer-links">
-          <li><a href="/privacy">Privacy Policy</a></li>
-          <li><a href="/terms">Terms of Service</a></li>
-          <li><a href="/contact">Contact Us</a></li>
-        </ul>
-      </div>
-    </div>
-    <div class="footer-bottom">
-      &copy; 2026 freeOCR.me &bull; All files processed exclusively in Linux RAM disk (tmpfs).
-    </div>
-  </footer>
-
-  <script>
-    var toggleBtn = document.getElementById('themeToggleBtn');
-    var sunIcon = document.getElementById('sunIcon');
-    var moonIcon = document.getElementById('moonIcon');
-
-    function updateIcons(t) {
-      if (t === 'dark') {
-        sunIcon.style.display = 'block';
-        moonIcon.style.display = 'none';
-      } else {
-        sunIcon.style.display = 'none';
-        moonIcon.style.display = 'block';
-      }
-    }
-
-    var currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
-    updateIcons(currentTheme);
-
-    toggleBtn.addEventListener('click', function () {
-      var active = document.documentElement.getAttribute('data-theme') || 'light';
-      var next = active === 'dark' ? 'light' : 'dark';
-      document.documentElement.setAttribute('data-theme', next);
-      try {
-        localStorage.setItem('freeocr_theme', next);
-      } catch (e) { }
-      updateIcons(next);
-    });
-
-    var contactForm = document.getElementById('contactForm');
-    var submitBtn = document.getElementById('submitBtn');
-    var successMsg = document.getElementById('successMsg');
-    var errorMsg = document.getElementById('errorMsg');
-
-    if (contactForm) {
-      contactForm.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        successMsg.style.display = 'none';
-        errorMsg.style.display = 'none';
-        submitBtn.disabled = true;
-        submitBtn.innerText = 'Sending... ⏳';
-
-        var payload = {
-          name: document.getElementById('name').value.trim(),
-          email: document.getElementById('email').value.trim(),
-          category: document.getElementById('category').value,
-          subject: document.getElementById('subject').value.trim(),
-          message: document.getElementById('message').value.trim()
-        };
-
-        try {
-          var response = await fetch('/api/v1/contact', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-          if (response.ok) {
-            successMsg.style.display = 'block';
-            contactForm.reset();
-          } else {
-            // Fallback: gracefully inform user
-            successMsg.style.display = 'block';
-            contactForm.reset();
-          }
-        } catch (err) {
-          successMsg.style.display = 'block';
-          contactForm.reset();
-        } finally {
-          submitBtn.disabled = false;
-          submitBtn.innerText = 'Send Message ✉️';
-        }
-      });
-    }
-  </script>
 </body>
-
-
 </html>

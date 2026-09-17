@@ -1,4 +1,4 @@
-name: Dual-Branch CI/CD Deployment (Optimized GitOps)
+name: FreePDFToolz CI/CD Deployment
 
 on:
   push:
@@ -7,16 +7,6 @@ on:
       - main
   workflow_dispatch:
     inputs:
-      target:
-        description: 'Deployment Target Domain'
-        required: true
-        default: 'skip'
-        type: choice
-        options:
-          - 'freeocr'
-          - 'freepdftoolz'
-          - 'both'
-          - 'skip'
       environment:
         description: 'Target Environment'
         required: true
@@ -27,58 +17,6 @@ on:
           - 'production'
 
 jobs:
-  detect-target:
-    name: Evaluate Deployment Destination
-    runs-on: ubuntu-latest
-    outputs:
-      target: ${{ steps.eval.outputs.target }}
-      deploy_env: ${{ steps.eval.outputs.deploy_env }}
-      deploy_freeocr: ${{ steps.eval.outputs.deploy_freeocr }}
-      deploy_freepdftoolz: ${{ steps.eval.outputs.deploy_freepdftoolz }}
-    steps:
-      - id: eval
-        name: Parse Trigger & Commit Tags
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            TARGET="${{ inputs.target }}"
-            ENV="${{ inputs.environment }}"
-            echo "Triggered via workflow_dispatch: target=$TARGET, env=$ENV"
-          else
-            COMMIT_MSG="${{ github.event.head_commit.message }}"
-            echo "Inspecting commit message: $COMMIT_MSG"
-            if echo "$COMMIT_MSG" | grep -iq "\[deploy:both\]"; then
-              TARGET="both"
-            elif echo "$COMMIT_MSG" | grep -iq "\[deploy:freeocr\]"; then
-              TARGET="freeocr"
-            elif echo "$COMMIT_MSG" | grep -iq "\[deploy:freepdftoolz\]"; then
-              TARGET="freepdftoolz"
-            else
-              TARGET="skip"
-            fi
-
-            if [ "${{ github.ref }}" = "refs/heads/main" ]; then
-              ENV="production"
-            else
-              ENV="staging"
-            fi
-            echo "Triggered via push: target=$TARGET, env=$ENV"
-          fi
-
-          echo "target=$TARGET" >> $GITHUB_OUTPUT
-          echo "deploy_env=$ENV" >> $GITHUB_OUTPUT
-
-          if [ "$TARGET" = "freeocr" ] || [ "$TARGET" = "both" ]; then
-            echo "deploy_freeocr=true" >> $GITHUB_OUTPUT
-          else
-            echo "deploy_freeocr=false" >> $GITHUB_OUTPUT
-          fi
-
-          if [ "$TARGET" = "freepdftoolz" ] || [ "$TARGET" = "both" ]; then
-            echo "deploy_freepdftoolz=true" >> $GITHUB_OUTPUT
-          else
-            echo "deploy_freepdftoolz=false" >> $GITHUB_OUTPUT
-          fi
-
   test-backend:
     name: Run Backend Test Suite
     runs-on: ubuntu-latest
@@ -123,87 +61,14 @@ jobs:
           flutter pub get
           flutter test
 
-  deploy-freeocr:
-    name: Deploy to freeocr.me (GCP Cloud Run & Firebase)
-    needs: [test-backend, test-frontend, detect-target]
-    runs-on: ubuntu-latest
-    if: needs.detect-target.outputs.deploy_freeocr == 'true'
-    env:
-      GCP_PROJECT: ${{ needs.detect-target.outputs.deploy_env == 'production' && 'freeocr-prod' || 'freeocr-staging-app' }}
-      DEPLOY_ENV: ${{ needs.detect-target.outputs.deploy_env }}
-
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python 3.13
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.13'
-          cache: 'pip'
-
-      - name: Set up Flutter SDK (Cached)
-        uses: subosito/flutter-action@v2
-        with:
-          channel: 'stable'
-          cache: true
-
-      - name: Compile Flutter Web Release Bundle
-        run: |
-          cd src/frontend
-          flutter pub get
-          flutter build web --release --no-wasm-dry-run
-
-      - name: Build Pre-rendered Static SEO Pages
-        run: |
-          python scripts/build_seo_pages.py
-
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
-
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
-
-      - name: Build & Push Backend Container Image via Cloud Build
-        run: |
-          gcloud builds submit src/backend \
-            --tag gcr.io/${{ env.GCP_PROJECT }}/freeocr-backend:latest \
-            --project ${{ env.GCP_PROJECT }}
-
-      - name: Deploy Backend to GCP Cloud Run (Scale-to-Zero & Preserve Secrets)
-        run: |
-          gcloud run deploy freeocr-api \
-            --image gcr.io/${{ env.GCP_PROJECT }}/freeocr-backend:latest \
-            --region us-central1 \
-            --platform managed \
-            --min-instances 0 \
-            --max-instances 5 \
-            --memory 2Gi \
-            --cpu 2 \
-            --timeout 300 \
-            --allow-unauthenticated \
-            --update-env-vars "ENVIRONMENT=${{ env.DEPLOY_ENV }},RESEND_API_KEY=${{ secrets.RESEND_API_KEY }},RESEND_FROM_EMAIL=delivery@freeocr.me,API_BASE_URL=https://freeocr.me" \
-            --project ${{ env.GCP_PROJECT }}
-
-      - name: Deploy Frontend to Firebase Hosting
-        uses: FirebaseExtended/action-hosting-deploy@v0
-        with:
-          repoToken: ${{ secrets.GITHUB_TOKEN }}
-          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT || secrets.GCP_SA_KEY }}
-          channelId: live
-          projectId: ${{ env.GCP_PROJECT }}
-          target: freeocr-staging-app
-
   deploy-freepdftoolz:
     name: Deploy to freepdftoolz.me (GCP Cloud Run & Firebase)
-    needs: [test-backend, test-frontend, detect-target]
+    needs: [test-backend, test-frontend]
     runs-on: ubuntu-latest
-    if: needs.detect-target.outputs.deploy_freepdftoolz == 'true'
+    if: "!contains(github.event.head_commit.message, '[skip deploy]')"
     env:
-      GCP_PROJECT: ${{ needs.detect-target.outputs.deploy_env == 'production' && (vars.FREEPDFTOOLZ_PROD_PROJECT || 'freepdftoolz-prod') || (vars.FREEPDFTOOLZ_STAGING_PROJECT || 'freeocr-staging-app') }}
-      DEPLOY_ENV: ${{ needs.detect-target.outputs.deploy_env }}
+      DEPLOY_ENV: ${{ github.event_name == 'workflow_dispatch' && inputs.environment || (github.ref == 'refs/heads/main' && 'production' || 'staging') }}
+      GCP_PROJECT: ${{ (github.event_name == 'workflow_dispatch' && inputs.environment == 'production' || github.ref == 'refs/heads/main') && (vars.FREEPDFTOOLZ_PROD_PROJECT || 'freepdftoolz-prod') || (vars.FREEPDFTOOLZ_STAGING_PROJECT || 'freeocr-staging-app') }}
 
     steps:
       - name: Checkout Repository
@@ -226,11 +91,6 @@ jobs:
           cd src/frontend
           flutter pub get
           flutter build web --release --no-wasm-dry-run
-
-      - name: Build Dedicated FreePDFToolz Web Distribution
-        run: |
-          python scripts/generate_freepdftoolz_pages.py
-          pwsh scripts/build_freepdftoolz_site.ps1
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2

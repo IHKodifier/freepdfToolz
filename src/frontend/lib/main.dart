@@ -457,16 +457,9 @@ class FreeOcrApp extends StatelessWidget {
               );
             }
 
-            // Root route '/': host-aware fallback
-            if (HostResolver.isFreePdfToolsDomain()) {
-              return MaterialPageRoute(
-                builder: (context) => const PdfToolsHubPage(),
-                settings: settings,
-              );
-            }
-
+            // Root route '/': FreePDFToolz 16-Tool Catalog Hub
             return MaterialPageRoute(
-              builder: (context) => const HomePage(),
+              builder: (context) => const PdfToolsHubPage(),
               settings: settings,
             );
           },

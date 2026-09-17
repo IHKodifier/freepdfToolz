@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:free_ocr_frontend/main.dart';
+import 'package:free_ocr_frontend/pages/pdf_tools_hub_page.dart';
 import 'package:free_ocr_frontend/pages/process_page.dart';
 import 'package:free_ocr_frontend/widgets/adsense_banner.dart';
 import 'package:free_ocr_frontend/widgets/ocr_progress_view.dart';
@@ -49,7 +50,7 @@ void main() {
       await tester.pumpWidget(const FreeOcrApp());
       await tester.pump();
 
-      final BuildContext context = tester.element(find.byType(HomePage));
+      final BuildContext context = tester.element(find.byType(PdfToolsHubPage));
       Navigator.pushNamed(
         context,
         '/process/job_test_456',
@@ -70,7 +71,7 @@ void main() {
       await tester.pumpWidget(const FreeOcrApp());
       await tester.pump();
 
-      final BuildContext context = tester.element(find.byType(HomePage));
+      final BuildContext context = tester.element(find.byType(PdfToolsHubPage));
       Navigator.pushNamed(
         context,
         '/process/job_test_789',
@@ -87,7 +88,7 @@ void main() {
         await tester.tap(cancelBtn);
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 100));
-        expect(find.byType(HomePage), findsOneWidget);
+        expect(find.byType(PdfToolsHubPage), findsOneWidget);
       }
     });
 

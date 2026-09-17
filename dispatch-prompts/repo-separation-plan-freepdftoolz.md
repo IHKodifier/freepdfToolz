@@ -13,6 +13,11 @@
 3. **AdSense Isolation:** Protect `freeocr.me` during active review, and give `freepdftoolz.me` its own standalone engineering governance.
 4. **Minimal Human Overhead:** Automate the migration using scripts, requiring only standard repository creation and secret copying.
 
+> [!IMPORTANT]
+> **Mandatory Dedicated Branch Execution:**  
+> This separation plan MUST be executed and implemented on a **separate dedicated branch** (e.g., `feature/repo-separation` or `chore/freepdftoolz-decoupling`) checked out from `dev`. In strict compliance with repository engineering governance (`AGENTS.md`), NEVER execute these changes directly on `main` or `dev`.
+
+
 ---
 
 ## 2. Inventory of Separation
@@ -106,6 +111,14 @@ Inside `e:\Non_Office\Dev_Space\vibe_skool\freepdftoolz`:
 ---
 
 ### Phase 4: Pruning Origin `freeOcr` Workspace
+
+> [!NOTE]
+> Execute all pruning modifications in `freeOcr` on a dedicated branch checked out from `dev`:
+> ```powershell
+> cd e:\Non_Office\Dev_Space\vibe_skool\freeOcr
+> git checkout dev
+> git checkout -b chore/freepdftoolz-decoupling
+> ```
 
 Inside `e:\Non_Office\Dev_Space\vibe_skool\freeOcr`:
 

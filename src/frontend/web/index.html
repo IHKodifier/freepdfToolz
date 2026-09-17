@@ -1,21 +1,139 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <base href="$FLUTTER_BASE_HREF">
+  <base href="/">
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>FreePDFToolz.me — 100% Free Online PDF Tools &amp; AI Conversions</title>
+  <meta name="title" content="FreePDFToolz.me — 100% Free Online PDF Tools &amp; AI Conversions">
+  <meta name="description" content="100% free online PDF suite. Merge, split, compress, rotate, redact, sign, and convert PDFs with zero account registration and ephemeral Linux RAM-disk privacy.">
+  <meta name="keywords" content="free pdf tools, merge pdf free, split pdf, compress pdf, rotate pdf, redact pdf, sign pdf, pdf to word, zero retention pdf, online pdf editor free">
+  <meta name="robots" content="index, follow">
 
-  <!-- Pure Web App Architecture: Stable app viewport & dark base background -->
+  <link rel="canonical" href="https://freepdftoolz.me/">
+
+  <!-- OpenGraph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://freepdftoolz.me/">
+  <meta property="og:title" content="FreePDFToolz.me — 100% Free Online PDF Tools &amp; AI Conversions">
+  <meta property="og:description" content="100% free online PDF suite. Merge, split, compress, rotate, redact, sign, and convert PDFs with zero account registration and ephemeral Linux RAM-disk privacy.">
+  <meta property="og:image" content="https://freepdftoolz.me/icons/Icon-512.png">
+  <meta property="og:site_name" content="FreePDFToolz.me">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:url" content="https://freepdftoolz.me/">
+  <meta name="twitter:title" content="FreePDFToolz.me — 100% Free Online PDF Tools &amp; AI Conversions">
+  <meta name="twitter:description" content="100% free online PDF suite. Merge, split, compress, rotate, redact, sign, and convert PDFs with zero account registration and ephemeral Linux RAM-disk privacy.">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" sizes="48x48" href="/icons/Icon-48.png">
+  <link rel="icon" type="image/png" sizes="96x96" href="/icons/Icon-96.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="/icons/Icon-192.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
+  <link rel="manifest" href="/manifest.json">
+
+  <!-- Google AdSense Monetization Tag -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6775900998665017" crossorigin="anonymous"></script>
+
+  <!-- Google Analytics 4 (GA4) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-W4D8V33FX1"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-W4D8V33FX1', { 'send_page_view': true });
+    
+    // JS Interop helpers for Flutter Telemetry Service
+    window.trackGa4Event = function(eventName, eventParams) {
+      var params = eventParams || {};
+      if (typeof window.gtag === 'function') {
+        window.gtag('event', eventName, params);
+      }
+      console.log('[GA4 Telemetry Event]', eventName, params);
+    };
+
+    window.trackGa4PageView = function(pagePath, pageTitle) {
+      var title = pageTitle || document.title;
+      if (typeof window.gtag === 'function') {
+        window.gtag('event', 'page_view', {
+          'page_path': pagePath,
+          'page_title': title
+        });
+      }
+      console.log('[GA4 Telemetry PageView]', pagePath, title);
+    };
+  </script>
+
+  <!-- Schema.org JSON-LD -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebApplication",
+        "name": "FreePDFToolz.me",
+        "url": "https://freepdftoolz.me/",
+        "description": "100% free online PDF manipulation platform. Merge, split, compress, rotate, crop, redact, sign, and convert PDFs with ephemeral Linux RAM-disk zero-retention privacy.",
+        "applicationCategory": "UtilitiesApplication",
+        "operatingSystem": "All",
+        "offers": {
+          "@type": "Offer",
+          "price": "0.00",
+          "priceCurrency": "USD"
+        }
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "How does FreePDFToolz.me keep all 16 PDF tools 100% free without charging subscriptions?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "FreePDFToolz.me operates on an open-source, community-driven model. Standard files up to 100 MB process completely free without registration or credit cards."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Are my uploaded PDF documents stored, backed up, or mined on your servers?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. Under our Zero Persistent Storage Guarantee, all uploaded files and output streams exist solely in volatile Linux RAM-disk (tmpfs) mounts. Data is unlinked immediately following conversion and purged by a 60-second watchdog daemon."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What is true cryptographic PDF redaction, and how does it differ from black highlighting?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "True cryptographic redaction excises underlying font glyphs and character coordinate operators from the PDF stream and overwrites bitmap pixels with solid black. In contrast, drawing black rectangles leaves underlying text selectable and easily copied."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I merge PDF files with different page orientations and sizes?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Our PyMuPDF-powered merging engine harmonizes documents of varying aspect ratios (A4, Letter, Legal, Tabloid), renumbering indirect objects without raster re-encoding or distortion."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How does PDF compression reduce file size while preserving readability?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Our multi-pass compressor applies lossless Deflate encoding to font streams and vector glyphs while using bicubic downsampling to optimize high-resolution raster images."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
   <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      background-color: #0b0f19;
-      overflow-x: hidden;
-    }
     @keyframes pulseDot {
       0%, 100% { opacity: 0.35; transform: scale(0.85); }
       50% { opacity: 1; transform: scale(1.15); }
@@ -33,389 +151,199 @@
     #editorial-content {
       transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1);
     }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      background-color: #0b0f19;
+      color: #94a3b8;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.7;
+      overflow-x: hidden;
+    }
+    h1, h2, h3, h4 { color: #f8fafc; }
+    h1 { font-size: 2.2rem; font-weight: 800; letter-spacing: -0.8px; margin-bottom: 1.2rem; line-height: 1.25; }
+    h2 { font-size: 1.5rem; font-weight: 700; margin-top: 2.5rem; margin-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 0.5rem; }
+    h3 { font-size: 1.15rem; font-weight: 600; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+    p { margin-bottom: 1.2rem; font-size: 1.02rem; }
+    ul, ol { margin-left: 1.5rem; margin-bottom: 1.5rem; }
+    li { margin-bottom: 0.5rem; }
+    strong { color: #f1f5f9; }
+    code { background: rgba(99,102,241,0.12); color: #c7d2fe; padding: 2px 6px; border-radius: 4px; font-size: 0.9em; font-family: monospace; }
+    a { color: #818cf8; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; }
+    .badge { display: inline-block; padding: 3px 10px; border-radius: 12px; background: rgba(99,102,241,0.18); border: 1px solid rgba(99,102,241,0.3); color: #818cf8; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 8px; }
+    .tip-box { display: flex; gap: 1rem; background: rgba(99,102,241,0.08); border-left: 4px solid #6366f1; border-radius: 8px; padding: 1.2rem 1.5rem; margin: 1.5rem 0; }
+    .tip-icon { font-size: 1.5rem; }
+    table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 0.95rem; }
+    th, td { border: 1px solid rgba(255,255,255,0.08); padding: 10px 14px; text-align: left; }
+    th { background: rgba(255,255,255,0.04); color: #f1f5f9; font-weight: 600; }
+    .active { color: #818cf8 !important; font-weight: 700 !important; }
+    .tool-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.25rem; margin-top: 1.5rem; }
+    .tool-card { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 1.5rem; transition: transform 0.2s, border-color 0.2s; text-decoration: none; display: flex; flex-direction: column; }
+    .tool-card:hover { transform: translateY(-3px); border-color: rgba(99,102,241,0.4); }
+    .tool-icon { width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 12px; }
+    .tool-title { font-size: 1.2rem; font-weight: 700; color: #f8fafc; margin-bottom: 8px; }
+    .tool-desc { font-size: 0.92rem; color: #94a3b8; line-height: 1.55; flex-grow: 1; }
+    
   </style>
-
-  <!-- Canonical URL -->
-  <link rel="canonical" href="https://freeocr.me/">
-
-  <!-- Primary SEO Meta Tags (Optimized with ClearSERP Low-Difficulty Benchmarks) -->
-  <title>freeOCR.me — OCR PDF for Free | Free Online OCR for PDF to Searchable PDF & Text</title>
-  <meta name="title" content="freeOCR.me — OCR PDF for Free | Free Online OCR for PDF to Searchable PDF & Text">
-  <meta name="description" content="100% free online OCR. No signup or card. 100MB base limit, stackable up to 1 GB (+50MB session passes). Convert scanned PDF to searchable PDF & text with AI.">
-  <meta name="keywords" content="ocr pdf for free, ocr a pdf for free, free ocr for pdf, pdf ocr for free, free online ocr for pdf, free online ocr pdf to pdf, pdf with ocr free, free pdf with ocr, pdf ocr text recognition free, ocr from pdf free, free ocr tool for pdf, pdf convert with ocr free, pdf to ocr converter free, free pdf converter with ocr, convert pdf to ocr for free, free ocr pdf to text, pdf to text ocr free, pdf to searchable pdf, scanned pdf to text, zero retention ocr">
-  <meta name="robots" content="index, follow">
-
-  <!-- OpenGraph / Facebook -->
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="https://freeocr.me/">
-  <meta property="og:title" content="freeOCR.me — OCR PDF for Free | Free Online OCR Tool for PDF & Text">
-  <meta property="og:description" content="100% Free Online AI OCR. No signup, no credit cards, no paywalls. Start with a 100 MB base limit, and stack +50 MB via session limit passes up to a huge 1 GB (1,024 MB). Zero retention & RAM-disk privacy.">
-  <meta property="og:image" content="https://freeocr.me/icons/Icon-512.png">
-  <meta property="og:site_name" content="freeOCR.me">
-  <meta property="og:locale" content="en_US">
-
-  <!-- Twitter Card -->
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:url" content="https://freeocr.me/">
-  <meta name="twitter:title" content="freeOCR.me — OCR PDF for Free | Free Online OCR Tool for PDF & Text">
-  <meta name="twitter:description" content="100% Free Online AI OCR. No signup, no credit cards, no paywalls. Start with a 100 MB base limit, and stack +50 MB via session limit passes up to a huge 1 GB (1,024 MB). Zero retention & RAM-disk privacy.">
-  <meta name="twitter:image" content="https://freeocr.me/icons/Icon-512.png">
-
-  <!-- iOS meta tags & icons -->
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="freeOCR.me">
-  <link rel="apple-touch-icon" sizes="192x192" href="/icons/Icon-192.png">
-  <link rel="apple-touch-icon" sizes="512x512" href="/icons/Icon-512.png">
-
-  <!-- Favicon & Search Engine Icons (Compliant with Google Search multiple of 48px rule) -->
-  <link rel="icon" type="image/png" sizes="48x48" href="/icons/Icon-48.png">
-  <link rel="icon" type="image/png" sizes="96x96" href="/icons/Icon-96.png">
-  <link rel="icon" type="image/png" sizes="192x192" href="/icons/Icon-192.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
-  <link rel="shortcut icon" href="/favicon.ico">
-  <link rel="manifest" href="/manifest.json">
-
-  <!-- Google AdSense Monetization Tag -->
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6775900998665017" crossorigin="anonymous"></script>
-
-  <!-- Google Analytics 4 (GA4) Domain-Aware Telemetry Tag -->
-  <script>
-    (function() {
-      var hostname = window.location.hostname;
-      var isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1';
-      var gaMeasurementId = null;
-
-      if (hostname.indexOf('freepdftoolz') !== -1 || window.location.search.indexOf('brand=freepdftoolz') !== -1) {
-        var metaTag = document.querySelector('meta[name="freepdftoolz-ga4-id"]');
-        gaMeasurementId = (metaTag && metaTag.getAttribute('content')) ? metaTag.getAttribute('content') : 'G-W4D8V33FX1';
-        document.title = 'FreePDFToolz.me — 100% Free Online PDF Tools & AI Conversions';
-        document.addEventListener('DOMContentLoaded', function() {
-          var shell = document.getElementById('app-loading-shell');
-          if (shell) {
-            shell.innerHTML = '<header style="max-width: 1200px; margin: 0 auto; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.06);"><div style="display: flex; align-items: center; gap: 10px;"><div style="width: 32px; height: 32px; border-radius: 10px; background: rgba(99,102,241,0.18); border: 1px solid rgba(99,102,241,0.35); display: flex; align-items: center; justify-content: center; color: #818cf8; font-weight: 800; font-size: 15px; font-family: sans-serif;">🛠️</div><span style="font-size: 1.25rem; font-weight: 800; color: #f8fafc; letter-spacing: -0.5px; font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif;">FreePDF<span style="color: #6366f1;">Toolz.me</span></span></div><nav style="display: flex; align-items: center; gap: 18px; font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif; font-size: 0.95rem;"><a href="/hub" style="color: #94a3b8; text-decoration: none; font-weight: 500;">All Tools</a><a href="/about" style="color: #94a3b8; text-decoration: none; font-weight: 500;">About</a><a href="/contact" style="color: #94a3b8; text-decoration: none; font-weight: 500;">Contact</a></nav></header><div style="max-width: 860px; margin: 36px auto 32px; padding: 0 20px; text-align: center; font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif;"><div style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 20px; background: rgba(99,102,241,0.12); border: 1px solid rgba(99,102,241,0.28); color: #818cf8; font-size: 12px; font-weight: 700; letter-spacing: 0.8px; margin-bottom: 18px;">✨ 100% FREE ONLINE PDF TOOLS &amp; AI CONVERSIONS</div><h2 style="font-size: clamp(1.8rem, 4vw, 2.5rem); font-weight: 800; color: #ffffff; margin: 0 0 14px; letter-spacing: -0.8px; line-height: 1.2;">All-in-One Local-First PDF Suite</h2><p style="font-size: 1.05rem; color: #94a3b8; max-width: 640px; margin: 0 auto 32px; line-height: 1.55;">Merge, split, rotate, compress, redact, sign, and convert PDFs directly in ephemeral RAM storage.</p><div style="display: inline-flex; align-items: center; gap: 10px; padding: 12px 24px; border-radius: 12px; background: rgba(99,102,241,0.12); border: 1px solid rgba(99,102,241,0.25); color: #c7d2fe; font-size: 0.95rem; font-weight: 600;"><span style="width: 8px; height: 8px; border-radius: 50%; background: #6366f1; animation: pulseDot 1.4s infinite ease-in-out;"></span>Loading FreePDFToolz Workspace...</div></div>';
-          }
-          var editorial = document.getElementById('editorial-content');
-          if (editorial) {
-            editorial.style.display = 'none';
-          }
-        });
-      } else if (hostname.indexOf('freeocr') !== -1 || !isLocalhost) {
-        gaMeasurementId = 'G-E852V95BXB';
-      }
-
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){ window.dataLayer.push(arguments); }
-      window.gtag = gtag;
-      gtag('js', new Date());
-
-      if (gaMeasurementId && !isLocalhost) {
-        gtag('config', gaMeasurementId, { 'send_page_view': true });
-        var script = document.createElement('script');
-        script.async = true;
-        script.src = 'https://www.googletagmanager.com/gtag/js?id=' + gaMeasurementId;
-        document.head.appendChild(script);
-        console.log('[GA4 Dynamic Loader] Initialized container for host:', hostname, gaMeasurementId);
-      } else if (isLocalhost) {
-        console.log('[GA4 Dynamic Loader] Localhost detected. Telemetry network calls suppressed for production container protection.');
-      }
-
-      // JS Interop helpers for Flutter Telemetry Service
-      window.trackGa4Event = function(eventName, eventParams) {
-        var params = eventParams || {};
-        if (typeof window.gtag === 'function' && !isLocalhost && gaMeasurementId) {
-          window.gtag('event', eventName, params);
-        }
-        console.log('[GA4 Telemetry Event]', eventName, params);
-      };
-
-      window.trackGa4PageView = function(pagePath, pageTitle) {
-        var title = pageTitle || document.title;
-        if (typeof window.gtag === 'function' && !isLocalhost && gaMeasurementId) {
-          window.gtag('event', 'page_view', {
-            'page_path': pagePath,
-            'page_title': title
-          });
-        }
-        console.log('[GA4 Telemetry PageView]', pagePath, title);
-      };
-    })();
-  </script>
-
-    // Immediate synchronous stream downloader that preserves active user gesture,
-    // absorbs duplicate clicks, and delegates directly to browser's native download manager
-    var _isStartingDownload = false;
-    window.downloadFileFromUrl = function(url, filename) {
-      if (_isStartingDownload) {
-        console.log('[Download] Absorbed concurrent download request:', filename);
-        return;
-      }
-      _isStartingDownload = true;
-      var a = document.createElement('a');
-      a.style.display = 'none';
-      a.href = url;
-      a.setAttribute('download', filename);
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(function() {
-        if (a.parentNode) {
-          a.parentNode.removeChild(a);
-        }
-        _isStartingDownload = false;
-      }, 5000);
-    };
-  </script>
-
-  <!-- Schema.org Structured Data -->
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "WebApplication",
-        "name": "freeOCR.me",
-        "url": "https://freeocr.me/",
-        "description": "100% free online OCR tool for PDF. No credit card and no registration required. 100 MB base upload limit, stackable up to 1 GB via session limit passes. Converts scanned PDFs to searchable PDF and text with zero data retention.",
-        "applicationCategory": "UtilitiesApplication",
-        "operatingSystem": "All",
-        "offers": {
-          "@type": "Offer",
-          "price": "0.00",
-          "priceCurrency": "USD"
-        }
-      },
-      {
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "How does freeOCR.me convert scanned PDFs into searchable text for free without charging subscriptions?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "freeOCR.me operates on an open-source, community-driven architecture powered by highly optimized CPU and GPU workers. Simple documents route to lightweight CPU workers running OCRmyPDF and Tesseract, while complex multi-column documents, math formulas, and dense tables route to Baidu's Unlimited OCR neural vision model on GPU clusters. This dual-engine architecture ensures high accuracy while keeping the service 100% free with no subscriptions or accounts."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Are my uploaded documents stored, analyzed, or mined on your servers?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. freeOCR.me operates under a strict Zero Persistent Storage Guarantee. All file uploads, intermediate page bitmaps, and output files reside exclusively in volatile Linux RAM disk (tmpfs) mounts. Input files are unlinked and purged from RAM immediately after conversion or download link generation. We never inspect, store, sell, or train AI models on your private documents."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What is a dual-layer searchable PDF, and how does invisible font rendering mode 3 work?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "A dual-layer searchable PDF preserves the exact visual appearance of the original scanned page as a background image layer while synthesizing an invisible, machine-searchable text layer directly on top. Under ISO 32000-1 font rendering mode 3 ('Neither fill nor stroke text'), text glyphs define coordinate bounds and clipboard characters without rendering colored pixels, enabling accurate search (Ctrl+F), selection, and copying."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How does dual-engine routing decide between CPU (OCRmyPDF/Tesseract) and GPU (Baidu Unlimited OCR)?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "An automated neural layout analyzer inspects each document page. Standard single-column text, contracts, and letters route to lightweight CPU workers running OCRmyPDF and Tesseract for sub-1.5 second turnaround. Pages containing multi-column newspaper layouts, mathematical formulas with TeX syntax, complex borderless tables, or multilingual character sets automatically route to Baidu Unlimited OCR on Nvidia GPU clusters."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do stackable session limit passes increase file size limits up to 1 GB?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Every user receives an immediate 100 MB per-file upload limit with zero registration. For larger documents like scanned books or court records, users can request instant session limit passes that expand ephemeral RAM-disk capacity in +50 MB increments, stacking all the way up to 1,024 MB (1 GB) for 60 minutes."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can freeOCR.me process skewed, rotated, or degraded scans and faded receipts?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. Our automated computer vision pipeline applies Radon transform projections to detect rotational skew within [-15°, +15°] and rotate pages horizontally. Local adaptive Otsu binarization separates faded ink from stained or thin paper, and Lanczos-4 neural upscaling enhances low-resolution scans to optimal 300 DPI before character recognition."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Why is Structured Markdown (.md) export superior to Plain Text (.txt) for OCR outputs?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "While plain text flattens documents into unformatted character streams, Structured Markdown preserves the document's architectural DNA: header hierarchy (#, ##, ###), table cell boundaries and column alignment, and monospace code blocks. Furthermore, Markdown enables direct, high-accuracy chunking for LLM prompts and Retrieval-Augmented Generation (RAG) vector search pipelines."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What document formats and resolutions yield the highest optical character recognition accuracy?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "We recommend PDF documents or high-resolution PNG, JPG, or JPEG images scanned at 300 DPI. Documents with clear contrast between text and background yield near 100% character recognition accuracy. Password-protected PDFs are also supported via client-side decryption."
-            }
-          }
-        ]
-      }
-    ]
-  }
-  </script>
 </head>
 <body>
-  <!-- 
-    Instant High-Fidelity Branded Shell:
-    Provides an instant, polished first contentful paint (FCP) matching the Flutter designer UI.
-    Smoothly fades out and dissolves when Flutter's interactive canvas mounts into the DOM.
-  -->
   <div id="app-loading-shell">
     <header style="max-width: 1200px; margin: 0 auto; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.06);">
-      <div style="display: flex; align-items: center; gap: 10px;">
-        <div style="width: 32px; height: 32px; border-radius: 10px; background: rgba(99,102,241,0.18); border: 1px solid rgba(99,102,241,0.35); display: flex; align-items: center; justify-content: center; color: #818cf8; font-weight: 800; font-size: 15px; font-family: sans-serif;">
-          ⚡
-        </div>
-        <span style="font-size: 1.25rem; font-weight: 800; color: #f8fafc; letter-spacing: -0.5px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-          freeOCR<span style="color: #6366f1;">.me</span>
-        </span>
-      </div>
+      <a href="/" style="display: flex; align-items: center; gap: 10px; text-decoration: none;">
+        <div style="width: 32px; height: 32px; border-radius: 10px; background: rgba(99,102,241,0.18); border: 1px solid rgba(99,102,241,0.35); display: flex; align-items: center; justify-content: center; color: #818cf8; font-weight: 800; font-size: 15px; font-family: sans-serif;">🛠️</div>
+        <span style="font-size: 1.25rem; font-weight: 800; color: #f8fafc; letter-spacing: -0.5px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">FreePDF<span style="color: #6366f1;">Toolz.me</span></span>
+      </a>
       <nav style="display: flex; align-items: center; gap: 18px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 0.95rem;">
-        <a href="/knowledge-base" style="color: #94a3b8; text-decoration: none; font-weight: 500;">Knowledge Base</a>
+        <a href="/hub" style="color: #94a3b8; text-decoration: none; font-weight: 500;">All 16 Tools</a>
         <a href="/about" style="color: #94a3b8; text-decoration: none; font-weight: 500;">About</a>
         <a href="/contact" style="color: #94a3b8; text-decoration: none; font-weight: 500;">Contact</a>
+        <a href="/privacy" style="color: #94a3b8; text-decoration: none; font-weight: 500;">Privacy</a>
       </nav>
     </header>
-
-    <div style="max-width: 860px; margin: 36px auto 32px; padding: 0 20px; text-align: center; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+    <div style="max-width: 860px; margin: 36px auto 32px; padding: 0 20px; text-align: center;">
       <div style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 20px; background: rgba(99,102,241,0.12); border: 1px solid rgba(99,102,241,0.28); color: #818cf8; font-size: 12px; font-weight: 700; letter-spacing: 0.8px; margin-bottom: 18px;">
-        ✨ 100% FREE ONLINE OCR — ZERO PERSISTENT STORAGE
+        ✨ 100% FREE ONLINE PDF TOOLS &bull; ZERO PERSISTENT STORAGE
       </div>
-      <h2 style="font-size: clamp(1.8rem, 4vw, 2.5rem); font-weight: 800; color: #ffffff; margin: 0 0 14px; letter-spacing: -0.8px; line-height: 1.2;">
-        Scanned PDF to Searchable PDF &amp; Text
-      </h2>
+      <h1 style="font-size: clamp(1.8rem, 4vw, 2.5rem); font-weight: 800; color: #ffffff; margin: 0 0 14px; letter-spacing: -0.8px; line-height: 1.2;">
+        All-in-One Local-First PDF Suite
+      </h1>
       <p style="font-size: 1.05rem; color: #94a3b8; max-width: 640px; margin: 0 auto 32px; line-height: 1.55;">
-        Convert scanned documents, books, and receipts into searchable PDFs with sub-pixel text alignment. Zero account registration and ephemeral RAM-disk privacy.
+        Merge, split, rotate, compress, redact, sign, and convert PDFs directly in ephemeral RAM storage. No credit cards, no subscriptions.
       </p>
 
-      <!-- Frosted Hero Dropzone Skeleton -->
       <div style="max-width: 720px; margin: 0 auto; padding: 48px 24px; border-radius: 24px; background: rgba(15, 23, 42, 0.6); border: 2px dashed rgba(99,102,241,0.35); box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); display: flex; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); animation: subtleGlow 3s infinite ease-in-out;">
-        <div style="width: 64px; height: 64px; border-radius: 18px; background: rgba(99,102,241,0.14); border: 1px solid rgba(99,102,241,0.25); display: flex; align-items: center; justify-content: center; margin-bottom: 16px; color: #818cf8;">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <div style="width: 64px; height: 64px; border-radius: 18px; background: rgba(99,102,241,0.14); border: 1px solid rgba(99,102,241,0.25); display: flex; align-items: center; justify-content: center; margin-bottom: 16px; color: #818cf8; font-size: 30px;">
+          🛠️
         </div>
         <div style="font-size: 1.2rem; font-weight: 700; color: #f8fafc; margin-bottom: 6px;">
-          Drop your PDF or image here
+          Select a tool or drop a PDF here
         </div>
         <div style="font-size: 0.88rem; color: #64748b; margin-bottom: 22px;">
-          100 MB free base limit &bull; Stackable up to 1 GB &bull; PDF, PNG, JPG
+          100 MB free base limit &bull; 16 PDF Tools &bull; 100% Privacy in RAM
         </div>
         <div style="display: inline-flex; align-items: center; gap: 10px; padding: 10px 20px; border-radius: 12px; background: rgba(99,102,241,0.12); border: 1px solid rgba(99,102,241,0.25); color: #c7d2fe; font-size: 0.9rem; font-weight: 600;">
           <span style="width: 8px; height: 8px; border-radius: 50%; background: #6366f1; animation: pulseDot 1.4s infinite ease-in-out;"></span>
-          Initializing secure OCR workspace...
+          Initializing FreePDFToolz Workspace...
         </div>
       </div>
     </div>
   </div>
 
-  <!-- 
-    Accessible Semantic Editorial Copy for Search Engine Crawlers (Googlebot, Bingbot) and AdSense Reviewers.
-    Zero off-screen cloaking: flows naturally in the DOM with native dark theme typography.
-  -->
+  <!-- Permanent Semantic Editorial Copy for Search Engine Crawlers & AdSense Quality Reviewers -->
   <article id="editorial-content" style="max-width: 1100px; margin: 0 auto; padding: 40px 24px 80px; color: #94a3b8; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.7;">
     <header>
-      <h1 style="font-size: 2rem; font-weight: 800; color: #f8fafc; margin-bottom: 1rem; letter-spacing: -0.5px;">freeOCR.me — Free Online OCR for Scanned PDF to Searchable PDF &amp; Text</h1>
-      <p style="font-size: 1.1rem; color: #cbd5e1; margin-bottom: 2rem;">A 100% free, privacy-first optical character recognition (OCR) web platform engineered to transform scanned documents, contracts, receipts, book archives, and images into pristine searchable PDFs and structured text without subscription paywalls, watermarks, or persistent cloud file retention.</p>
+      <h1 style="font-size: 2rem; font-weight: 800; color: #f8fafc; margin-bottom: 1rem; letter-spacing: -0.5px;">
+        FreePDFToolz.me — 100% Free Online PDF Manipulation &amp; Document Intelligence Suite
+      </h1>
+      <p style="font-size: 1.1rem; color: #cbd5e1; margin-bottom: 2rem;">
+        An all-in-one, privacy-first PDF utility engineered to merge, split, compress, crop, watermark, redact, sign, and convert PDF documents in volatile Linux RAM disks without subscriptions, accounts, or persistent cloud file retention.
+      </p>
     </header>
 
     <section>
-      <h2 style="font-size: 1.4rem; font-weight: 700; color: #e2e8f0; margin-top: 2.5rem; margin-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 0.5rem;">1. Dual-Layer Searchable PDF Architecture (ISO 32000-1 Standard)</h2>
-      <p>When physical paperwork is digitized via flatbed scanners or smartphone cameras, the resulting file is merely a grid of colored pixels—an opaque raster bitmap containing no selectable digital characters. Searching for keywords with <code>Ctrl+F</code>, copying legal clauses, or highlighting research sentences is completely impossible on standard scanned PDFs.</p>
-      <p>freeOCR.me solves this through dual-layer PDF synthesis (colloquially known as a "Sandwich PDF"), governed by the ISO 32000-1 international specification. In this architecture, two discrete document layers work in perfect geometric synchronization:</p>
-      <ul style="margin-left: 1.5rem; margin-bottom: 1.25rem;">
-        <li style="margin-bottom: 0.5rem;"><strong style="color: #f1f5f9;">Visual Raster Background Layer:</strong> Your original scanned page image is retained at 100% visual fidelity, preserving handwritten signatures, ink stamps, physical paper textures, and graphic illustrations without lossy re-encoding or visual corruption.</li>
-        <li style="margin-bottom: 0.5rem;"><strong style="color: #f1f5f9;">Sub-Pixel Coordinate Normalization:</strong> Our deep neural vision models output precise bounding polygons for every detected word. These pixel coordinates are mathematically mapped to PDF point coordinates (72 points per inch) with sub-pixel alignment using dynamic scaling ratios: <code>scale_x = page.rect.width / pix.width</code> and <code>scale_y = page.rect.height / pix.height</code>.</li>
-        <li style="margin-bottom: 0.5rem;"><strong style="color: #f1f5f9;">Invisible Font Render Mode 3:</strong> Under Section 9.3.6 of the ISO 32000-1 specification, text rendering mode 3 ("Neither fill nor stroke text") instructs PDF rendering engines (Adobe Acrobat, Chrome PDF Viewer, Apple Preview) to construct invisible glyph geometries directly over matching scanned words. When a user drags their cursor across the document, the invisible glyphs capture the mouse selection, allowing smooth text highlighting and clipboard copying while leaving the original image visually unaltered.</li>
-        <li style="margin-bottom: 0.5rem;"><strong style="color: #f1f5f9;">Word-Level Spacing Calibration:</strong> By modulating PDF character spacing (<code>Tc</code>) and word spacing (<code>Tw</code>) operators, word drift across wide margins is eliminated, guaranteeing accurate copy-paste operations even across multi-column journals.</li>
+      <h2>1. The 16-Tool All-in-One PDF Suite Architecture</h2>
+      <p>Managing digital paperwork should not require paying $20 per month for software subscriptions or trusting sensitive legal records to unencrypted third-party clouds. FreePDFToolz.me provides an integrated suite of 16 precision document utilities:</p>
+      <ul>
+        <li><strong>Page Operations:</strong> Combine multiple contracts with <strong>Merge PDF</strong>, isolate specific page ranges with <strong>Split PDF</strong>, permanently correct orientations with <strong>Rotate PDF</strong>, eliminate scan flaws with <strong>Delete Pages</strong>, extract specific chapters with <strong>Extract Pages</strong>, and stamp professional bates numbering with <strong>Number Pages</strong>.</li>
+        <li><strong>Document Security:</strong> Reduce email attachment sizes by up to 90% with <strong>Compress PDF</strong>, safeguard intellectual property with <strong>Watermark PDF</strong>, permanently obliterate social security numbers and names with <strong>True Cryptographic Redaction</strong>, and stamp binding signatures with <strong>Sign PDF</strong>.</li>
+        <li><strong>AI &amp; Conversions:</strong> Reverse-engineer rigid PDFs into editable Word documents with <strong>PDF to Word (.docx)</strong>, digitize scanned archives with <strong>OCR PDF</strong>, and extract key findings from dense reports with <strong>Summarize PDF with AI</strong>.</li>
       </ul>
     </section>
 
     <section>
-      <h2 style="font-size: 1.4rem; font-weight: 700; color: #e2e8f0; margin-top: 2.5rem; margin-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 0.5rem;">2. Dual-Engine Neural Routing: CPU (OCRmyPDF/Tesseract) vs. GPU (Baidu Unlimited OCR)</h2>
-      <p>Document processing workloads are notoriously heterogeneous. A clean, single-column scanned contract requires significantly less computational power than a three-column academic journal containing complex mathematical equations and dense financial tables. Running massive deep learning models on simple documents wastes precious electrical energy, while running lightweight heuristic engines on complex layouts leads to garbled reading order.</p>
-      <p>freeOCR.me implements an automated dual-engine routing architecture that dynamically directs each page to the optimal execution environment:</p>
-      <ul style="margin-left: 1.5rem; margin-bottom: 1.25rem;">
-        <li style="margin-bottom: 0.5rem;"><strong style="color: #f1f5f9;">Automated Layout Analysis:</strong> Before invoking character recognition, an initial lightweight computer vision pass analyzes page topology, measuring text line orientation, column boundaries, table cell grids, and mathematical symbol density.</li>
-        <li style="margin-bottom: 0.5rem;"><strong style="color: #f1f5f9;">Fast CPU Routing (OCRmyPDF &amp; Tesseract):</strong> Documents identified as standard single-column text (such as typed letters, legal agreements, and corporate memos) are routed to high-performance CPU workers running OCRmyPDF and Tesseract OCR. This pathway completes conversions in under 1.5 seconds per page with minimal resource consumption.</li>
-        <li style="margin-bottom: 0.5rem;"><strong style="color: #f1f5f9;">GPU Deep Learning Routing (Baidu Unlimited OCR):</strong> Pages exhibiting complex layouts—such as newspaper columns, nested tabular grids, mathematical notation with TeX syntax, or multilingual scripts (Chinese, Japanese, Korean, Arabic)—route instantly to dedicated Nvidia GPU workers running Baidu's Unlimited OCR neural vision model (~6 GB weights). This deep learning model decomposes complex reading orders with state-of-the-art precision.</li>
+      <h2>2. ISO 32000-1 Standards &amp; Object Stream Architecture</h2>
+      <p>The Portable Document Format is governed by the ISO 32000-1 international specification. A PDF is not a stream of formatted text; it is an object-oriented graph of indirect objects (dictionaries, streams, numbers, strings, and cross-reference tables). When FreePDFToolz processes documents:</p>
+      <ul>
+        <li><strong>Cross-Reference (XRef) Regeneration:</strong> Object identifier collisions during document merging are eliminated through dynamic offset indexing.</li>
+        <li><strong>Lossless Vector Preservation:</strong> Embedded fonts, vector charts, and architectural CAD drawings retain 100% mathematical fidelity.</li>
+        <li><strong>Linearization (Fast Web View):</strong> Output documents are optimized for immediate streaming rendering in web browsers.</li>
       </ul>
     </section>
 
     <section>
-      <h2 style="font-size: 1.4rem; font-weight: 700; color: #e2e8f0; margin-top: 2.5rem; margin-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 0.5rem;">3. Step-by-Step Conversion Guide for Scanned Books, Receipts, and Legal Documents</h2>
-      <p>Digitizing physical documents with freeOCR.me is fast, seamless, and requires zero technical configuration. Follow this step-by-step workflow to achieve optimal conversion fidelity:</p>
-      <ol style="margin-left: 1.5rem; margin-bottom: 1.25rem;">
-        <li style="margin-bottom: 0.75rem;"><strong style="color: #f1f5f9;">Step 1 — Document Ingestion &amp; Password Handling:</strong> Drag and drop your scanned PDF, PNG, JPG, or JPEG file directly into the browser dropzone. You immediately receive a 100 MB file allowance without needing to register an account. If your PDF is encrypted with an owner or user password, enter the password in the prompt to decrypt it locally in your browser session without writing unprotected files to disk.</li>
-        <li style="margin-bottom: 0.75rem;"><strong style="color: #f1f5f9;">Step 2 — Computer Vision Preprocessing:</strong> Our automated preprocessing pipeline normalizes the document. Skewed pages are corrected using Radon transform projections (-15° to +15°), low-contrast scans and faded receipts are enhanced via adaptive Otsu binarization, and low-resolution faxes are upscaled to 300 DPI using Lanczos-4 interpolation.</li>
-        <li style="margin-bottom: 0.75rem;"><strong style="color: #f1f5f9;">Step 3 — Real-Time SSE Progress Monitoring:</strong> Watch your document process in real time via Server-Sent Events (SSE). Our interface displays live page-by-page progress indicators, active layout analyzer decisions, and estimated time to completion.</li>
-        <li style="margin-bottom: 0.75rem;"><strong style="color: #f1f5f9;">Step 4 — 1-Click Multi-Format Export:</strong> Upon completion, export your results in your preferred format: Searchable PDF (with invisible text layer), Clean Structured Markdown (.md) for note-taking apps and LLM prompting, or Plain Text (.txt) for lightweight parsing.</li>
-      </ol>
+      <h2>3. True Cryptographic Redaction vs Superficial Black Overlays</h2>
+      <p>Drawing black boxes over text in basic PDF viewers does not protect your privacy—underneath the box, text streams remain searchable and easily copied. FreePDFToolz applies true cryptographic redaction: text operators (<code>Tj</code> / <code>TJ</code>) are destroyed in the content stream, and underlying image pixels are permanently overwritten with opaque black hex values (<code>#000000</code>).</p>
     </section>
 
     <section>
-      <h2 style="font-size: 1.4rem; font-weight: 700; color: #e2e8f0; margin-top: 2.5rem; margin-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 0.5rem;">4. Ephemeral RAM-Disk Security Guarantee (Linux tmpfs Zero-Retention)</h2>
-      <p>Document confidentiality is the central architectural pillar of freeOCR.me. Unlike traditional cloud utilities that write uploaded files to persistent solid-state drives (SSDs) or cloud storage buckets (e.g., AWS S3 or Google Cloud Storage)—where data can persist across filesystem journals and backup snapshots—freeOCR.me operates on an uncompromising Zero Persistent Storage architecture:</p>
-      <ul style="margin-left: 1.5rem; margin-bottom: 1.25rem;">
-        <li style="margin-bottom: 0.5rem;"><strong style="color: #f1f5f9;">Volatile RAM Disk Mounting:</strong> All file uploads, intermediate page bitmaps, deskewed buffers, and generated output streams reside exclusively in Linux <code>tmpfs</code> RAM disk mounts. Data exists strictly as electrical charges in volatile DRAM chips. At no stage does your document ever touch persistent non-volatile disk platters.</li>
-        <li style="margin-bottom: 0.5rem;"><strong style="color: #f1f5f9;">Instant Automated Unlink:</strong> The moment your OCR conversion finishes and output download links are retrieved, an automated POSIX <code>unlink()</code> protocol executes immediately, severing inode pointers and zeroing memory allocations.</li>
-        <li style="margin-bottom: 0.5rem;"><strong style="color: #f1f5f9;">Autonomous Watchdog Janitor Daemon:</strong> A continuous background watchdog sweeps the RAM disk directory every 60 seconds. Any session older than 60 minutes is forcefully unlinked, guaranteeing that no orphaned document ever lingers.</li>
-        <li style="margin-bottom: 0.5rem;"><strong style="color: #f1f5f9;">Zero Model Training Guarantee:</strong> Uploaded documents are never stored, inspected, analyzed, or used to fine-tune machine learning models. Your intellectual property remains exclusively yours.</li>
+      <h2>4. Ephemeral Linux RAM-Disk (tmpfs) Zero-Retention Confidentiality</h2>
+      <p>Document security is our foundational principle. Unlike standard cloud utilities that write uploaded files to persistent solid-state drives (SSDs) or cloud storage buckets (AWS S3 / Google Cloud Storage)—where files can linger in filesystem journals and automated snapshots—FreePDFToolz operates under an uncompromising Zero Persistent Storage Guarantee:</p>
+      <ul>
+        <li><strong>Volatile Memory Only:</strong> All uploads and processed streams exist solely in Linux <code>tmpfs</code> RAM disk mounts. Data exists strictly as electrical charges in volatile server DRAM chips.</li>
+        <li><strong>Instant Automated Unlink:</strong> When your file is downloaded, an automated POSIX <code>unlink()</code> call severs memory inode pointers, erasing allocations.</li>
+        <li><strong>Continuous Watchdog Janitor:</strong> A 60-second cron daemon sweeps memory continuously, purging any session older than 15 minutes.</li>
       </ul>
     </section>
 
     <section>
-      <h2 style="font-size: 1.4rem; font-weight: 700; color: #e2e8f0; margin-top: 2.5rem; margin-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 0.5rem;">5. Frequently Asked Technical Questions (FAQ)</h2>
+      <h2>5. Frequently Asked Technical Questions (FAQ)</h2>
       <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 1.5rem;">
-        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 1.25rem 1.5rem;">
-          <h3 style="margin-top: 0; color: #f8fafc; font-size: 1.05rem;">Q1: How does freeOCR.me convert scanned PDFs into searchable text for free without charging subscriptions?</h3>
-          <p style="margin-bottom: 0; font-size: 0.95rem;">freeOCR.me operates on an open-source, community-driven architecture powered by highly optimized CPU and GPU workers. Simple documents route to lightweight CPU workers running OCRmyPDF and Tesseract, while complex multi-column documents, math formulas, and dense tables route to Baidu's Unlimited OCR neural vision model on GPU clusters. This dual-engine architecture ensures high accuracy while keeping the service 100% free with no subscriptions or accounts.</p>
+        <div class="card">
+          <h3>Q1: How does FreePDFToolz.me keep all 16 PDF tools 100% free without subscriptions?</h3>
+          <p>FreePDFToolz operates on an open-source, community-driven architecture. For standard files up to 100 MB, the service is completely free with zero account registration or credit cards.</p>
         </div>
-        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 1.25rem 1.5rem;">
-          <h3 style="margin-top: 0; color: #f8fafc; font-size: 1.05rem;">Q2: Are my uploaded documents stored, analyzed, or mined on your servers?</h3>
-          <p style="margin-bottom: 0; font-size: 0.95rem;">No. freeOCR.me operates under a strict Zero Persistent Storage Guarantee. All file uploads, intermediate page bitmaps, and output files reside exclusively in volatile Linux RAM disk (tmpfs) mounts. Input files are unlinked and purged from RAM immediately after conversion or download link generation. We never inspect, store, sell, or train AI models on your private documents.</p>
+        <div class="card">
+          <h3>Q2: Are my uploaded documents stored, analyzed, or mined on your servers?</h3>
+          <p>No. Under our Zero Persistent Storage Guarantee, all uploaded files and output streams exist solely in volatile Linux RAM-disk (tmpfs) mounts. We never view, store, sell, or train AI models on your private documents.</p>
         </div>
-        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 1.25rem 1.5rem;">
-          <h3 style="margin-top: 0; color: #f8fafc; font-size: 1.05rem;">Q3: What is a dual-layer searchable PDF, and how does invisible font rendering mode 3 work?</h3>
-          <p style="margin-bottom: 0; font-size: 0.95rem;">A dual-layer searchable PDF preserves the exact visual appearance of the original scanned page as a background image layer while synthesizing an invisible, machine-searchable text layer directly on top. Under ISO 32000-1 font rendering mode 3 ('Neither fill nor stroke text'), text glyphs define coordinate bounds and clipboard characters without rendering colored pixels, enabling accurate search (Ctrl+F), selection, and copying.</p>
+        <div class="card">
+          <h3>Q3: What is true cryptographic redaction, and why is it safer than black markers?</h3>
+          <p>True cryptographic redaction permanently purges underlying character codes and vector streams from the PDF file. In contrast, drawing black boxes merely places a shape on top of the text layer, allowing anyone to copy or search the hidden text beneath.</p>
         </div>
-        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 1.25rem 1.5rem;">
-          <h3 style="margin-top: 0; color: #f8fafc; font-size: 1.05rem;">Q4: How does dual-engine routing decide between CPU (OCRmyPDF/Tesseract) and GPU (Baidu Unlimited OCR)?</h3>
-          <p style="margin-bottom: 0; font-size: 0.95rem;">An automated neural layout analyzer inspects each document page. Standard single-column text, contracts, and letters route to lightweight CPU workers running OCRmyPDF and Tesseract for sub-1.5 second turnaround. Pages containing multi-column newspaper layouts, mathematical formulas with TeX syntax, complex borderless tables, or multilingual character sets automatically route to Baidu Unlimited OCR on Nvidia GPU clusters.</p>
+        <div class="card">
+          <h3>Q4: Can I merge PDF documents with different page orientations and sizes?</h3>
+          <p>Yes. Our merging engine dynamically evaluates each page's MediaBox and CropBox dictionaries, harmonizing Letter, A4, and Legal dimensions without distorting layout.</p>
         </div>
-        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 1.25rem 1.5rem;">
-          <h3 style="margin-top: 0; color: #f8fafc; font-size: 1.05rem;">Q5: How do stackable session limit passes increase file size limits up to 1 GB?</h3>
-          <p style="margin-bottom: 0; font-size: 0.95rem;">Every user receives an immediate 100 MB per-file upload limit with zero registration. For larger documents like scanned books or court records, users can request instant session limit passes that expand ephemeral RAM-disk capacity in +50 MB increments, stacking all the way up to 1,024 MB (1 GB) for 60 minutes.</p>
+        <div class="card">
+          <h3>Q5: How does PDF compression reduce file size without losing text sharpness?</h3>
+          <p>We apply lossless Deflate compression to font descriptors and vector line art, while using bicubic downsampling to optimize high-resolution raster images.</p>
         </div>
-        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 1.25rem 1.5rem;">
-          <h3 style="margin-top: 0; color: #f8fafc; font-size: 1.05rem;">Q6: Can freeOCR.me process skewed, rotated, or degraded scans and faded receipts?</h3>
-          <p style="margin-bottom: 0; font-size: 0.95rem;">Yes. Our automated computer vision pipeline applies Radon transform projections to detect rotational skew within [-15°, +15°] and rotate pages horizontally. Local adaptive Otsu binarization separates faded ink from stained or thin paper, and Lanczos-4 neural upscaling enhances low-resolution scans to optimal 300 DPI before character recognition.</p>
+        <div class="card">
+          <h3>Q6: Can I convert scanned PDFs into editable Microsoft Word (.docx) files?</h3>
+          <p>Yes. Our PDF to Word conversion engine reconstructs paragraph baselines, table grids, and character formatting from fixed Cartesian coordinates into fluid Word flows.</p>
         </div>
-        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 1.25rem 1.5rem;">
-          <h3 style="margin-top: 0; color: #f8fafc; font-size: 1.05rem;">Q7: Why is Structured Markdown (.md) export superior to Plain Text (.txt) for OCR outputs?</h3>
-          <p style="margin-bottom: 0; font-size: 0.95rem;">While plain text flattens documents into unformatted character streams, Structured Markdown preserves the document's architectural DNA: header hierarchy (#, ##, ###), table cell boundaries and column alignment, and monospace code blocks. Furthermore, Markdown enables direct, high-accuracy chunking for LLM prompts and Retrieval-Augmented Generation (RAG) vector search pipelines.</p>
+        <div class="card">
+          <h3>Q7: What is the maximum file size limit on FreePDFToolz?</h3>
+          <p>Every visitor receives an immediate 100 MB per-file upload limit. For massive archives or scanned books, requesting instant session limit passes increases capacity in +50 MB increments up to 1,024 MB (1 GB).</p>
         </div>
-        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 1.25rem 1.5rem;">
-          <h3 style="margin-top: 0; color: #f8fafc; font-size: 1.05rem;">Q8: What document formats and resolutions yield the highest optical character recognition accuracy?</h3>
-          <p style="margin-bottom: 0; font-size: 0.95rem;">We recommend PDF documents or high-resolution PNG, JPG, or JPEG images scanned at 300 DPI. Documents with clear contrast between text and background yield near 100% character recognition accuracy. Password-protected PDFs are also supported via client-side decryption.</p>
+        <div class="card">
+          <h3>Q8: Are digital signatures created on FreePDFToolz legally binding?</h3>
+          <p>Yes. Digital signatures created on FreePDFToolz comply with the US Federal ESIGN Act and European eIDAS regulations for electronic signatures in commercial agreements.</p>
+        </div>
+        <div class="card">
+          <h3>Q9: Can FreePDFToolz remove passwords from protected PDFs?</h3>
+          <p>Yes, provided you know the document owner or user password, our client-side decryption engine unlocks the document in your browser session without writing unencrypted files to disk.</p>
+        </div>
+        <div class="card">
+          <h3>Q10: Does FreePDFToolz support mobile devices and tablets?</h3>
+          <p>Yes. Our interface is fully responsive, supporting touchscreen gestures for page reordering, signature drawing, and one-click downloads across iOS, Android, macOS, Windows, and Linux.</p>
         </div>
       </div>
     </section>
 
-    <footer style="margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.08); display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1rem; font-size: 0.9rem;">
-      <div>&copy; 2026 freeOCR.me &bull; Ephemeral Linux RAM-Disk Optical Character Recognition</div>
-      <nav style="display: flex; gap: 1.25rem;">
-        <a href="/knowledge-base" style="color: #818cf8;">Knowledge Base</a>
-        <a href="/about" style="color: #818cf8;">About Us</a>
-        <a href="/contact" style="color: #818cf8;">Contact</a>
-        <a href="/privacy" style="color: #818cf8;">Privacy Policy</a>
-        <a href="/terms" style="color: #818cf8;">Terms</a>
+    <footer style="margin-top: 4rem; padding-top: 2rem; border-top: 1px solid rgba(255,255,255,0.08); display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1.5rem; font-size: 0.9rem; color: #64748b; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+      <div>
+        <div style="font-weight: 700; color: #f8fafc; margin-bottom: 4px;">FreePDFToolz.me</div>
+        <div>&copy; 2026 FreePDFToolz.me &bull; Ephemeral Linux RAM-Disk PDF Suite &bull; All Rights Reserved.</div>
+      </div>
+      <nav style="display: flex; flex-wrap: wrap; gap: 1.25rem;">
+        <a href="/hub" style="color: #818cf8; text-decoration: none;">All 16 PDF Tools</a>
+        <a href="/kb/pdf-merge-guide" style="color: #818cf8; text-decoration: none;">Merge Guide</a>
+        <a href="/kb/pdf-compression-guide" style="color: #818cf8; text-decoration: none;">Compression Guide</a>
+        <a href="/kb/cryptographic-redaction" style="color: #818cf8; text-decoration: none;">Redaction Guide</a>
+        <a href="/about" style="color: #818cf8; text-decoration: none;">About Us</a>
+        <a href="/contact" style="color: #818cf8; text-decoration: none;">Contact</a>
+        <a href="/privacy" style="color: #818cf8; text-decoration: none;">Privacy Policy</a>
+        <a href="/terms" style="color: #818cf8; text-decoration: none;">Terms of Service</a>
       </nav>
     </footer>
   </article>
 
-  <!-- Seamless Flutter Mount & Fade Transition -->
+  <!-- Seamless Flutter Mount & Transition: Permanent DOM Retention -->
   <script>
     (function() {
       var hasTransitioned = false;
@@ -423,7 +351,6 @@
         if (hasTransitioned) return;
         hasTransitioned = true;
         var shell = document.getElementById('app-loading-shell');
-        var editorial = document.getElementById('editorial-content');
         if (shell) {
           shell.style.opacity = '0';
           shell.style.transform = 'translateY(-6px)';
@@ -431,10 +358,9 @@
             if (shell && shell.parentNode) shell.parentNode.removeChild(shell);
           }, 360);
         }
-        // Permanent DOM Retention: #editorial-content is kept permanently mounted in the live DOM for search engine crawlers and AdSense reviewers.
+        // Permanent DOM Retention: #editorial-content is kept permanently mounted in the live DOM for search crawlers and AdSense reviewers.
       }
 
-      // 1. Observe when Flutter's canvas view mounts to document.body
       var observer = new MutationObserver(function(mutations) {
         for (var i = 0; i < mutations.length; i++) {
           var added = mutations[i].addedNodes;
@@ -462,17 +388,11 @@
         });
       }
 
-      // 2. Event listeners for Flutter first frame
       window.addEventListener('flutter-first-frame', hideStaticShell);
       window.addEventListener('flutter_app_loaded', hideStaticShell);
-
-      // 3. Fallback safety timeout (12s maximum)
       setTimeout(hideStaticShell, 12000);
     })();
   </script>
-
   <script src="flutter_bootstrap.js" async></script>
 </body>
-
 </html>
-

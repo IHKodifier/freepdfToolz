@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:free_ocr_frontend/main.dart';
+import 'package:free_ocr_frontend/pages/pdf_tools_hub_page.dart';
 import 'package:free_ocr_frontend/pages/kb_page.dart';
 import 'package:free_ocr_frontend/widgets/app_footer.dart';
 import 'package:free_ocr_frontend/widgets/landing_faq_section.dart';
@@ -11,7 +12,7 @@ void main() {
       await tester.pumpWidget(const FreeOcrApp());
       await tester.pumpAndSettle();
 
-      final BuildContext context = tester.element(find.byType(HomePage));
+      final BuildContext context = tester.element(find.byType(PdfToolsHubPage));
       Navigator.pushNamed(context, '/kb/ai-vs-traditional-ocr');
       await tester.pumpAndSettle();
 
@@ -26,7 +27,7 @@ void main() {
       await tester.pumpWidget(const FreeOcrApp());
       await tester.pumpAndSettle();
 
-      final BuildContext context = tester.element(find.byType(HomePage));
+      final BuildContext context = tester.element(find.byType(PdfToolsHubPage));
       Navigator.pushNamed(context, '/kb/ai-ocr-complex-layouts');
       await tester.pumpAndSettle();
 
@@ -66,6 +67,9 @@ void main() {
 
     testWidgets('HomePage renders eye-catching announcement banner for high-fidelity engine upgrade', (WidgetTester tester) async {
       await tester.pumpWidget(const FreeOcrApp());
+      await tester.pumpAndSettle();
+      final BuildContext context = tester.element(find.byType(PdfToolsHubPage));
+      Navigator.pushNamed(context, '/ocr');
       await tester.pumpAndSettle();
 
       expect(find.textContaining('Near-Lossless Layout Fidelity'), findsOneWidget);

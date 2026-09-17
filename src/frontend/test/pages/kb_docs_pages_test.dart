@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:free_ocr_frontend/main.dart';
+import 'package:free_ocr_frontend/pages/pdf_tools_hub_page.dart';
 
 void main() {
   group('Knowledge Base Page Navigation & Content Tests', () {
@@ -8,7 +9,7 @@ void main() {
       await tester.pumpWidget(const FreeOcrApp());
       await tester.pumpAndSettle();
 
-      final BuildContext context = tester.element(find.byType(HomePage));
+      final BuildContext context = tester.element(find.byType(PdfToolsHubPage));
       Navigator.pushNamed(context, '/kb');
       await tester.pumpAndSettle();
 
@@ -23,7 +24,7 @@ void main() {
       await tester.pumpWidget(const FreeOcrApp());
       await tester.pumpAndSettle();
 
-      final BuildContext context = tester.element(find.byType(HomePage));
+      final BuildContext context = tester.element(find.byType(PdfToolsHubPage));
       Navigator.pushNamed(context, '/kb/pdf-standards');
       await tester.pumpAndSettle();
 
@@ -38,11 +39,11 @@ void main() {
       await tester.pumpWidget(const FreeOcrApp());
       await tester.pumpAndSettle();
 
-      final BuildContext context = tester.element(find.byType(HomePage));
+      final BuildContext context = tester.element(find.byType(PdfToolsHubPage));
       Navigator.pushNamed(context, '/docs');
       await tester.pumpAndSettle();
 
-      expect(find.byType(HomePage), findsOneWidget);
+      expect(find.byType(PdfToolsHubPage), findsOneWidget);
       expect(find.textContaining('API Access Coming Soon'), findsNothing);
     });
   });
@@ -52,7 +53,7 @@ void main() {
       await tester.pumpWidget(const FreeOcrApp());
       await tester.pumpAndSettle();
 
-      final BuildContext context = tester.element(find.byType(HomePage));
+      final BuildContext context = tester.element(find.byType(PdfToolsHubPage));
       Navigator.pushNamed(context, '/privacy');
       await tester.pumpAndSettle();
 
@@ -67,7 +68,7 @@ void main() {
       await tester.pumpWidget(const FreeOcrApp());
       await tester.pumpAndSettle();
 
-      final BuildContext context = tester.element(find.byType(HomePage));
+      final BuildContext context = tester.element(find.byType(PdfToolsHubPage));
       Navigator.pushNamed(context, '/terms');
       await tester.pumpAndSettle();
 
