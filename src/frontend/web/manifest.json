@@ -1,11 +1,11 @@
 {
-    "name": "freeOCR.me — Free Online PDF OCR",
-    "short_name": "freeOCR.me",
+    "name": "FreePDFToolz — Free Online PDF Tools & AI Conversions",
+    "short_name": "FreePDFToolz",
     "start_url": "/",
     "display": "standalone",
-    "background_color": "#0b0f19",
-    "theme_color": "#0b0f19",
-    "description": "Convert Scanned PDF to Searchable PDF and Text for free with AI OCR and zero data retention.",
+    "background_color": "#0f172a",
+    "theme_color": "#6366f1",
+    "description": "100% free online PDF suite. Merge, split, compress, rotate, redact, sign, and convert PDFs with ephemeral Linux RAM-disk privacy.",
     "orientation": "any",
     "prefer_related_applications": false,
     "icons": [

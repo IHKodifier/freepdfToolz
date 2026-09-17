@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:free_ocr_frontend/constants/social_links.dart';
-import 'package:free_ocr_frontend/widgets/app_footer.dart';
+import 'package:freepdftoolz_frontend/constants/social_links.dart';
+import 'package:freepdftoolz_frontend/widgets/app_footer.dart';
 
 void main() {
   Widget buildTestWidget(Widget child) {
@@ -102,8 +102,16 @@ void main() {
 
       // Verify FreePDFToolz Brand title & Privacy commitment text
       expect(find.text('FreePDFToolz'), findsOneWidget);
-      expect(find.textContaining('FreePDFToolz.me • 100% Free & Local-First PDF Platform'), findsOneWidget);
-      expect(find.textContaining('Zero retention & RAM disk privacy'), findsOneWidget);
+      expect(
+        find.textContaining(
+          'FreePDFToolz.me • 100% Free & Local-First PDF Platform',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('Zero retention & RAM disk privacy'),
+        findsOneWidget,
+      );
 
       // Verify Navigation Buttons for PDF Tools
       expect(find.text('Tools Hub'), findsOneWidget);
@@ -119,4 +127,3 @@ void main() {
     },
   );
 }
-

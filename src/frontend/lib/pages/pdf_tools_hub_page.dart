@@ -505,144 +505,171 @@ class _PdfToolsHubPageState extends State<PdfToolsHubPage> {
       builder: (context, favorites, _) {
         final tools = _getFilteredTools(favorites);
 
+        Widget content;
         if (_selectedFilter == 'favorites' && tools.isEmpty) {
-          return Container(
-            padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 16),
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1E293B).withOpacity(0.5) : const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: isDark ? Colors.white10 : Colors.black.withOpacity(0.06),
+          content = KeyedSubtree(
+            key: const ValueKey('empty_favorites'),
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 16),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1E293B).withOpacity(0.5) : const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: isDark ? Colors.white10 : Colors.black.withOpacity(0.06),
+                ),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.favorite_border_rounded,
+                    size: 48,
+                    color: const Color(0xFFF43F5E).withOpacity(0.8),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'No Favorite PDF Tools Yet',
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                      color: theme.colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 420),
+                    child: Text(
+                      'Click the heart icon on any tool card to pin your most frequently used tools here for rapid 1-click access.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 13,
+                        height: 1.4,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  OutlinedButton.icon(
+                    onPressed: () {
+                      setState(() {
+                        _selectedFilter = 'all';
+                      });
+                    },
+                    icon: const Icon(Icons.apps_rounded, size: 16),
+                    label: const Text('Browse All 16 Tools'),
+                  ),
+                ],
               ),
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.favorite_border_rounded,
-                  size: 48,
-                  color: const Color(0xFFF43F5E).withOpacity(0.8),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'No Favorite PDF Tools Yet',
-                  style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                    color: theme.colorScheme.onSurface,
+          );
+        } else if (tools.isEmpty) {
+          content = KeyedSubtree(
+            key: const ValueKey('empty_search'),
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 40),
+              alignment: Alignment.center,
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.search_off_rounded,
+                    size: 48,
+                    color: theme.colorScheme.onSurfaceVariant.withOpacity(0.5),
                   ),
-                ),
-                const SizedBox(height: 6),
-                ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 420),
-                  child: Text(
-                    'Click the heart icon on any tool card to pin your most frequently used tools here for rapid 1-click access.',
-                    textAlign: TextAlign.center,
+                  const SizedBox(height: 12),
+                  Text(
+                    'No matching PDF tools found',
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                      color: theme.colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Try adjusting your search terms or clearing your search.',
                     style: TextStyle(
                       fontSize: 13,
-                      height: 1.4,
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
-                ),
-                const SizedBox(height: 16),
-                OutlinedButton.icon(
-                  onPressed: () {
-                    setState(() {
-                      _selectedFilter = 'all';
-                    });
-                  },
-                  icon: const Icon(Icons.apps_rounded, size: 16),
-                  label: const Text('Browse All 16 Tools'),
-                ),
-              ],
-            ),
-          );
-        }
-
-        if (tools.isEmpty) {
-          return Container(
-            padding: const EdgeInsets.symmetric(vertical: 40),
-            alignment: Alignment.center,
-            child: Column(
-              children: [
-                Icon(
-                  Icons.search_off_rounded,
-                  size: 48,
-                  color: theme.colorScheme.onSurfaceVariant.withOpacity(0.5),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'No matching PDF tools found',
-                  style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                    color: theme.colorScheme.onSurface,
+                  const SizedBox(height: 14),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      _searchController.clear();
+                      setState(() {
+                        _searchQuery = '';
+                        _selectedFilter = 'all';
+                      });
+                    },
+                    icon: const Icon(Icons.refresh_rounded, size: 16),
+                    label: const Text('Reset Search'),
                   ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'Try adjusting your search terms or clearing your search.',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: 14),
-                ElevatedButton.icon(
-                  onPressed: () {
-                    _searchController.clear();
-                    setState(() {
-                      _searchQuery = '';
-                      _selectedFilter = 'all';
-                    });
-                  },
-                  icon: const Icon(Icons.refresh_rounded, size: 16),
-                  label: const Text('Reset Search'),
-                ),
-              ],
-            ),
-          );
-        }
-
-        return LayoutBuilder(
-          builder: (context, constraints) {
-            int crossAxisCount = 1;
-            if (constraints.maxWidth >= 1050) {
-              crossAxisCount = 4;
-            } else if (constraints.maxWidth >= 760) {
-              crossAxisCount = 3;
-            } else if (constraints.maxWidth >= 500) {
-              crossAxisCount = 2;
-            }
-
-            return GridView.builder(
-              physics: const NeverScrollableScrollPhysics(),
-              shrinkWrap: true,
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: crossAxisCount,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-                mainAxisExtent: 60,
+                ],
               ),
-              itemCount: tools.length,
-              itemBuilder: (context, index) {
-                final tool = tools[index];
-                return ToolCard(
-                  key: ValueKey(tool.id),
-                  id: tool.id,
-                  name: tool.name,
-                  description: tool.description,
-                  category: tool.category,
-                  route: tool.route,
-                  icon: tool.icon,
-                  badge: tool.badge,
-                  color: tool.color,
+            ),
+          );
+        } else {
+          content = KeyedSubtree(
+            key: ValueKey('grid_${_selectedFilter}_${tools.length}'),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                int crossAxisCount = 1;
+                if (constraints.maxWidth >= 1050) {
+                  crossAxisCount = 4;
+                } else if (constraints.maxWidth >= 760) {
+                  crossAxisCount = 3;
+                } else if (constraints.maxWidth >= 500) {
+                  crossAxisCount = 2;
+                }
+
+                return GridView.builder(
+                  physics: const NeverScrollableScrollPhysics(),
+                  shrinkWrap: true,
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: crossAxisCount,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    mainAxisExtent: 70,
+                  ),
+                  itemCount: tools.length,
+                  itemBuilder: (context, index) {
+                    final tool = tools[index];
+                    return ToolCard(
+                      key: ValueKey(tool.id),
+                      id: tool.id,
+                      name: tool.name,
+                      description: tool.description,
+                      category: tool.category,
+                      route: tool.route,
+                      icon: tool.icon,
+                      badge: tool.badge,
+                      color: tool.color,
+                    );
+                  },
                 );
               },
+            ),
+          );
+        }
+
+        return AnimatedSwitcher(
+          duration: const Duration(milliseconds: 240),
+          switchInCurve: Curves.easeOutCubic,
+          switchOutCurve: Curves.easeInCubic,
+          transitionBuilder: (child, anim) {
+            return FadeTransition(
+              opacity: anim,
+              child: SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(0, 0.02),
+                  end: Offset.zero,
+                ).animate(anim),
+                child: child,
+              ),
             );
           },
+          child: content,
         );
       },
     );

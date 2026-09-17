@@ -1,15 +1,19 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:free_ocr_frontend/services/telemetry_service.dart';
+import 'package:freepdftoolz_frontend/services/telemetry_service.dart';
 
 void main() {
   group('TelemetryService Unit & FreePDFToolz Telemetry Tests', () {
     test('trackPageView dispatches pageview without throwing', () {
       expect(
-        () => TelemetryService.trackPageView('/', pageTitle: 'freeOCR.me — Home'),
+        () =>
+            TelemetryService.trackPageView('/', pageTitle: 'freeOCR.me — Home'),
         returnsNormally,
       );
       expect(
-        () => TelemetryService.trackPageView('/result/job_abc123', pageTitle: 'Result'),
+        () => TelemetryService.trackPageView(
+          '/result/job_abc123',
+          pageTitle: 'Result',
+        ),
         returnsNormally,
       );
     });
@@ -17,19 +21,31 @@ void main() {
     test('test_track_page_view_dispatches_for_freepdftoolz_routes', () {
       // Hub & FreePDFToolz tools
       expect(
-        () => TelemetryService.trackPageView('/pdf-tools', pageTitle: 'FreePDFToolz — All PDF Tools'),
+        () => TelemetryService.trackPageView(
+          '/pdf-tools',
+          pageTitle: 'FreePDFToolz — All PDF Tools',
+        ),
         returnsNormally,
       );
       expect(
-        () => TelemetryService.trackPageView('/sign/process', pageTitle: 'FreePDFToolz — Sign PDF (Workspace)'),
+        () => TelemetryService.trackPageView(
+          '/sign/process',
+          pageTitle: 'FreePDFToolz — Sign PDF (Workspace)',
+        ),
         returnsNormally,
       );
       expect(
-        () => TelemetryService.trackPageView('/merge/process', pageTitle: 'FreePDFToolz — Merge PDF'),
+        () => TelemetryService.trackPageView(
+          '/merge/process',
+          pageTitle: 'FreePDFToolz — Merge PDF',
+        ),
         returnsNormally,
       );
       expect(
-        () => TelemetryService.trackPageView('/compress', pageTitle: 'FreePDFToolz — Compress PDF'),
+        () => TelemetryService.trackPageView(
+          '/compress',
+          pageTitle: 'FreePDFToolz — Compress PDF',
+        ),
         returnsNormally,
       );
     });
@@ -80,39 +96,48 @@ void main() {
       );
     });
 
-    test('trackDocumentUploaded dispatches upload telemetry without throwing', () {
-      expect(
-        () => TelemetryService.trackDocumentUploaded(
-          filename: 'sample_doc.pdf',
-          fileSizeInBytes: 2048576,
-          source: 'unit_test',
-        ),
-        returnsNormally,
-      );
-    });
+    test(
+      'trackDocumentUploaded dispatches upload telemetry without throwing',
+      () {
+        expect(
+          () => TelemetryService.trackDocumentUploaded(
+            filename: 'sample_doc.pdf',
+            fileSizeInBytes: 2048576,
+            source: 'unit_test',
+          ),
+          returnsNormally,
+        );
+      },
+    );
 
-    test('trackOcrCompleted dispatches OCR complete telemetry without throwing', () {
-      expect(
-        () => TelemetryService.trackOcrCompleted(
-          jobId: 'job_test_456',
-          pageCount: 5,
-          durationSeconds: 2.5,
-          layoutType: 'simple',
-        ),
-        returnsNormally,
-      );
-    });
+    test(
+      'trackOcrCompleted dispatches OCR complete telemetry without throwing',
+      () {
+        expect(
+          () => TelemetryService.trackOcrCompleted(
+            jobId: 'job_test_456',
+            pageCount: 5,
+            durationSeconds: 2.5,
+            layoutType: 'simple',
+          ),
+          returnsNormally,
+        );
+      },
+    );
 
-    test('trackDownloadClicked dispatches download telemetry without throwing', () {
-      expect(
-        () => TelemetryService.trackDownloadClicked(
-          jobId: 'job_test_789',
-          format: 'pdf',
-          filename: 'sample_doc_searchable.pdf',
-        ),
-        returnsNormally,
-      );
-    });
+    test(
+      'trackDownloadClicked dispatches download telemetry without throwing',
+      () {
+        expect(
+          () => TelemetryService.trackDownloadClicked(
+            jobId: 'job_test_789',
+            format: 'pdf',
+            filename: 'sample_doc_searchable.pdf',
+          ),
+          returnsNormally,
+        );
+      },
+    );
 
     test('trackEmailSent dispatches email telemetry without throwing', () {
       expect(
