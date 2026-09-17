@@ -1,522 +1,162 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
-
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <title>About Us — freeOCR.me</title>
-  <meta name="title" content="About Us — freeOCR.me | Democratizing Document OCR with Zero-Storage Privacy">
-  <meta name="description"
-    content="Learn about freeOCR.me, our mission to provide completely free, privacy-first document OCR with ephemeral RAM disk processing, zero cloud data retention, and open-source AI engines.">
+  <title>About Us — Ephemeral Privacy-First PDF Suite — FreePDFToolz.me</title>
+  <meta name="description" content="Learn about FreePDFToolz.me, our 100% free online PDF suite, zero-disk Linux RAM-disk ephemeral security guarantee, and open-source architecture.">
+  <link rel="canonical" href="https://freepdftoolz.me/about">
   <meta name="robots" content="index, follow">
-  <link rel="canonical" href="https://freeocr.me/about">
-
-  <!-- OpenGraph -->
+  
   <meta property="og:type" content="website">
-  <meta property="og:url" content="https://freeocr.me/about">
-  <meta property="og:title" content="About Us — freeOCR.me">
-  <meta property="og:description"
-    content="100% Free Online AI OCR utility. Ephemeral Linux RAM disk processing with zero disk retention.">
-  <meta property="og:image" content="https://freeocr.me/icons/Icon-512.png">
-
+  <meta property="og:url" content="https://freepdftoolz.me/about">
+  <meta property="og:title" content="About Us — Ephemeral Privacy-First PDF Suite — FreePDFToolz.me">
+  <meta property="og:description" content="Learn about FreePDFToolz.me, our 100% free online PDF suite, zero-disk Linux RAM-disk ephemeral security guarantee, and open-source architecture.">
+  <meta property="og:site_name" content="FreePDFToolz.me">
+  
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="About Us — Ephemeral Privacy-First PDF Suite — FreePDFToolz.me">
+  <meta name="twitter:description" content="Learn about FreePDFToolz.me, our 100% free online PDF suite, zero-disk Linux RAM-disk ephemeral security guarantee, and open-source architecture.">
+  
   <!-- Favicon -->
-  <link rel="icon" type="image/png" href="/favicon.png">
-  <link rel="shortcut icon" href="/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
   <link rel="manifest" href="/manifest.json">
-
-  <!-- Theme Script (Runs synchronously before render to prevent flash) -->
-  <script>
-    (function () {
-      try {
-        var saved = localStorage.getItem('freeocr_theme');
-        var theme = saved || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-        document.documentElement.setAttribute('data-theme', theme);
-      } catch (e) { }
-    })();
-  </script>
-
-  <!-- Google AdSense Monetization Tag -->
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6775900998665017"
-    crossorigin="anonymous"></script>
-
-  <!-- Google Analytics 4 (GA4) Telemetry Tag -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-E852V95BXB"></script>
+  
+  <!-- Google Analytics 4 (GA4) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-W4D8V33FX1"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
-    function gtag() { dataLayer.push(arguments); }
+    function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
-    gtag('config', 'G-E852V95BXB', { 'send_page_view': true });
+    gtag('config', 'G-W4D8V33FX1', { 'send_page_view': true });
   </script>
-
+  
+  <!-- Schema.org JSON-LD -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "AboutPage",
+    "headline": "About Us — Ephemeral Privacy-First PDF Suite",
+    "description": "Learn about FreePDFToolz.me, our 100% free online PDF suite, zero-disk Linux RAM-disk ephemeral security guarantee, and open-source architecture.",
+    "mainEntityOfPage": "https://freepdftoolz.me/about",
+    "publisher": {
+      "@type": "Organization",
+      "name": "FreePDFToolz.me",
+      "url": "https://freepdftoolz.me/"
+    }
+  }
+  </script>
+  
   <style>
-    :root {
-      --bg: #ffffff;
-      --card-bg: #f8fafc;
-      --card-border: #e2e8f0;
-      --text-main: #0f172a;
-      --text-muted: #64748b;
-      --heading: #0f172a;
-      --accent: #6366f1;
-      --accent-light: #4f46e5;
-      --border: #e2e8f0;
-      --header-bg: rgba(255, 255, 255, 0.88);
-      --footer-bg: #f1f5f9;
-      --toggle-bg: rgba(99, 102, 241, 0.08);
-      --toggle-color: #6366f1;
-    }
 
-    [data-theme="dark"] {
-      --bg: #0b0f19;
-      --card-bg: #111827;
-      --card-border: rgba(255, 255, 255, 0.08);
-      --text-main: #f3f4f6;
-      --text-muted: #9ca3af;
-      --heading: #ffffff;
-      --accent: #6366f1;
-      --accent-light: #818cf8;
-      --border: rgba(255, 255, 255, 0.08);
-      --header-bg: rgba(11, 15, 25, 0.88);
-      --footer-bg: rgba(15, 23, 42, 0.95);
-      --toggle-bg: rgba(255, 255, 255, 0.1);
-      --toggle-color: #f3f4f6;
-    }
-
-    * {
-      box-sizing: border-box;
+    html, body {
       margin: 0;
       padding: 0;
-    }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      background-color: var(--bg);
-      color: var(--text-main);
-      line-height: 1.6;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      transition: background-color 0.2s ease, color 0.2s ease;
-    }
-
-    header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0.85rem 2rem;
-      border-bottom: 1px solid var(--border);
-      background: var(--header-bg);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      position: sticky;
-      top: 0;
-      z-index: 100;
-    }
-
-    .logo {
-      display: flex;
-      align-items: center;
-      gap: 0.65rem;
-      font-size: 1.2rem;
-      font-weight: 800;
-      letter-spacing: -0.5px;
-      color: var(--heading);
-      text-decoration: none;
-    }
-
-    .logo-icon {
-      width: 32px;
-      height: 32px;
-      border-radius: 8px;
-      background: rgba(99, 102, 241, 0.12);
-      border: 1px solid rgba(99, 102, 241, 0.3);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--accent);
-      font-weight: bold;
-    }
-
-    .logo span {
-      color: var(--accent);
-    }
-
-    .nav-wrapper {
-      display: flex;
-      align-items: center;
-      gap: 1.25rem;
-    }
-
-    nav a {
-      color: var(--text-muted);
-      text-decoration: none;
-      font-size: 0.95rem;
-      font-weight: 500;
-      transition: color 0.2s;
-    }
-
-    nav a:hover,
-    nav a.active {
-      color: var(--accent);
-      font-weight: 600;
-    }
-
-    .theme-toggle-btn {
-      background: var(--toggle-bg);
-      border: none;
-      color: var(--toggle-color);
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .container {
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 2.5rem 1.5rem;
-      flex: 1;
-    }
-
-    .badge {
-      display: inline-block;
-      padding: 0.25rem 0.75rem;
-      background: rgba(99, 102, 241, 0.12);
-      color: var(--accent);
-      border: 1px solid rgba(99, 102, 241, 0.3);
-      border-radius: 20px;
-      font-size: 0.75rem;
-      font-weight: 700;
-      letter-spacing: 0.05em;
-      margin-bottom: 1rem;
-    }
-
-    h1 {
-      font-size: 2.25rem;
-      font-weight: 800;
-      letter-spacing: -0.03em;
-      color: var(--heading);
-      margin-bottom: 0.75rem;
-      line-height: 1.2;
-    }
-
-    .subtitle {
-      font-size: 1.15rem;
-      color: var(--text-muted);
-      margin-bottom: 2rem;
-      line-height: 1.5;
-    }
-
-    .card {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 16px;
-      padding: 1.75rem;
-      margin-bottom: 1.5rem;
-    }
-
-    .card h2 {
-      font-size: 1.25rem;
-      font-weight: 700;
-      color: var(--heading);
-      margin-bottom: 0.85rem;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .card p {
-      color: var(--text-muted);
-      font-size: 0.98rem;
-      margin-bottom: 0.85rem;
-    }
-
-    .card p:last-child {
-      margin-bottom: 0;
-    }
-
-    .card ul {
-      margin-left: 1.25rem;
-      color: var(--text-muted);
-      font-size: 0.95rem;
-      margin-bottom: 0.85rem;
-    }
-
-    .card li {
-      margin-bottom: 0.4rem;
-    }
-
-    footer {
-      background: var(--footer-bg);
-      border-top: 1px solid var(--border);
-      padding: 3rem 2rem 2rem;
-      margin-top: 4rem;
-    }
-
-    .footer-grid {
-      max-width: 1100px;
-      margin: 0 auto;
-      display: grid;
-      grid-template-columns: 2fr 1fr 1fr 1fr;
-      gap: 2rem;
-    }
-
-    .footer-col h3 {
-      font-size: 0.9rem;
-      font-weight: 700;
-      color: var(--heading);
-      margin-bottom: 1rem;
-    }
-
-    .footer-links {
-      list-style: none;
-    }
-
-    .footer-links li {
-      margin-bottom: 0.5rem;
-    }
-
-    .footer-links a {
-      color: var(--text-muted);
-      text-decoration: none;
-      font-size: 0.88rem;
-      transition: color 0.2s;
-    }
-
-    .footer-links a:hover {
-      color: var(--accent);
-    }
-
-    .footer-bottom {
-      max-width: 1100px;
-      margin: 2rem auto 0;
-      padding-top: 1.5rem;
-      border-top: 1px solid var(--border);
-      text-align: center;
-      color: var(--text-muted);
-      font-size: 0.82rem;
-    }
-
-    .social-row {
-      display: flex;
-      gap: 0.75rem;
-      margin-top: 1rem;
-    }
-
-    .social-btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 36px;
-      height: 36px;
-      border-radius: 8px;
-      background: var(--toggle-bg);
-      color: var(--heading);
-      text-decoration: none;
-      font-size: 0.9rem;
-      transition: background 0.2s;
-    }
-
-    .social-btn:hover {
-      background: rgba(99, 102, 241, 0.2);
-    }
-
-    .social-modal-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
       width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.55);
-      backdrop-filter: blur(4px);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 9999;
+      background-color: #0b0f19;
+      color: #94a3b8;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.7;
+      overflow-x: hidden;
     }
-
-    .social-modal-box {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 24px;
-      max-width: 440px;
-      width: 90%;
-      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.25);
-    }
-
-    @media (max-width: 768px) {
-      .footer-grid {
-        grid-template-columns: 1fr;
-        gap: 1.5rem;
-      }
-
-      header {
-        padding: 0.75rem 1rem;
-      }
-
-      .container {
-        padding: 1.5rem 1rem;
-      }
-    }
+    h1, h2, h3, h4 { color: #f8fafc; }
+    h1 { font-size: 2.2rem; font-weight: 800; letter-spacing: -0.8px; margin-bottom: 1.2rem; line-height: 1.25; }
+    h2 { font-size: 1.5rem; font-weight: 700; margin-top: 2.5rem; margin-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 0.5rem; }
+    h3 { font-size: 1.15rem; font-weight: 600; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+    p { margin-bottom: 1.2rem; font-size: 1.02rem; }
+    ul, ol { margin-left: 1.5rem; margin-bottom: 1.5rem; }
+    li { margin-bottom: 0.5rem; }
+    strong { color: #f1f5f9; }
+    code { background: rgba(99,102,241,0.12); color: #c7d2fe; padding: 2px 6px; border-radius: 4px; font-size: 0.9em; font-family: monospace; }
+    a { color: #818cf8; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; }
+    .badge { display: inline-block; padding: 3px 10px; border-radius: 12px; background: rgba(99,102,241,0.18); border: 1px solid rgba(99,102,241,0.3); color: #818cf8; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 8px; }
+    .tip-box { display: flex; gap: 1rem; background: rgba(99,102,241,0.08); border-left: 4px solid #6366f1; border-radius: 8px; padding: 1.2rem 1.5rem; margin: 1.5rem 0; }
+    .tip-icon { font-size: 1.5rem; }
+    table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 0.95rem; }
+    th, td { border: 1px solid rgba(255,255,255,0.08); padding: 10px 14px; text-align: left; }
+    th { background: rgba(255,255,255,0.04); color: #f1f5f9; font-weight: 600; }
+    .active { color: #818cf8 !important; font-weight: 700 !important; }
+    .tool-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.25rem; margin-top: 1.5rem; }
+    .tool-card { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 1.5rem; transition: transform 0.2s, border-color 0.2s; text-decoration: none; display: flex; flex-direction: column; }
+    .tool-card:hover { transform: translateY(-3px); border-color: rgba(99,102,241,0.4); }
+    .tool-icon { width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 12px; }
+    .tool-title { font-size: 1.2rem; font-weight: 700; color: #f8fafc; margin-bottom: 8px; }
+    .tool-desc { font-size: 0.92rem; color: #94a3b8; line-height: 1.55; flex-grow: 1; }
+    
   </style>
 </head>
-
 <body>
-
-  <header>
-    <a href="/" class="logo">
-      <div class="logo-icon">📄</div>
-      <div>freeOCR<span>.me</span></div>
-    </a>
-    <div class="nav-wrapper">
-      <nav>
-        <a href="/">Home</a>
-        <a href="/about" class="active">About</a>
-        <a href="/knowledge-base">Knowledge Base</a>
-        <a href="/contact">Contact</a>
+    <header style="max-width: 1200px; margin: 0 auto; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.06);">
+      <a href="/" style="display: flex; align-items: center; gap: 10px; text-decoration: none;">
+        <div style="width: 32px; height: 32px; border-radius: 10px; background: rgba(99,102,241,0.18); border: 1px solid rgba(99,102,241,0.35); display: flex; align-items: center; justify-content: center; color: #818cf8; font-weight: 800; font-size: 15px; font-family: sans-serif;">🛠️</div>
+        <span style="font-size: 1.25rem; font-weight: 800; color: #f8fafc; letter-spacing: -0.5px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">FreePDF<span style="color: #6366f1;">Toolz.me</span></span>
+      </a>
+      <nav style="display: flex; align-items: center; gap: 18px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 0.95rem;">
+        <a href="/hub" style="color: #94a3b8; text-decoration: none; font-weight: 500;">All 16 Tools</a>
+        <a href="/about" style="color: #94a3b8; text-decoration: none; font-weight: 500;" class="active">About</a>
+        <a href="/contact" style="color: #94a3b8; text-decoration: none; font-weight: 500;">Contact</a>
+        <a href="/privacy" style="color: #94a3b8; text-decoration: none; font-weight: 500;">Privacy</a>
       </nav>
-      <button class="theme-toggle-btn" id="themeToggleBtn" aria-label="Toggle Theme">
-        <span id="sunIcon" style="display:none;">☀️</span>
-        <span id="moonIcon">🌙</span>
-      </button>
-    </div>  <main class="container">
-    <div class="badge">ABOUT FREEOCR.ME</div>
-    <h1>Democratizing Document OCR with Zero-Storage Privacy</h1>
-    <p class="subtitle">A high-performance web platform converting scanned documents into searchable PDFs and clean
-      digital text without accounts, paywalls, or privacy trade-offs.</p>
+    </header>
 
-    <!-- Native Google AdSense Display Unit -->
-    <div style="margin: 1.5rem 0; display: flex; justify-content: center;">
-      <ins class="adsbygoogle" style="display:block; width:100%; text-align:center;"
-        data-ad-client="ca-pub-6775900998665017" data-ad-slot="1234567890" data-ad-format="auto"
-        data-full-width-responsive="true"></ins>
-      <script>
-        (adsbygoogle = window.adsbygoogle || []).push({});
-      </script>
-    </div>
+  <main style="max-width: 1000px; margin: 40px auto 80px; padding: 0 20px;">
 
-    <div class="card">
-      <h2>💡 1. Our Founding Mission &amp; Philosophy</h2>
-      <p>The modern digital landscape is littered with utility websites that promise "free online OCR" only to bait-and-switch visitors behind aggressive paywalls. Users frequently encounter arbitrary 3-page conversion limits, coercive $15–$30 monthly subscriptions, intrusive watermarks stamped across output pages, or opaque terms that grant platforms broad rights to inspect, retain, or monetize uploaded private paperwork.</p>
-      <p>freeOCR.me was conceived with a fundamentally different ethos: document accessibility is an essential utility of the information age and must remain universally accessible to everyone, everywhere, without financial friction or privacy compromise. Whether you are a student archiving historical library scans, an independent researcher digitizing out-of-print books, a legal assistant searching through trial discovery records, or an everyday consumer trying to read a faded medical receipt, you deserve an industrial-strength conversion engine that respects your time, your wallet, and your confidentiality.</p>
-      <p>We made a permanent, non-negotiable architectural commitment from day one: freeOCR.me is completely free to use. There are no credit card prompts, no trial subscriptions that silently bill you, no locked enterprise features, and no mandatory account creation. Every visitor instantly receives a 100 MB per-file upload allowance, stackable up to 1,000 MB (1 GB) for heavy multi-hundred-page archives.</p>
-    </div>
-
-    <div class="card">
-      <h2>⚙️ 2. Transparent Technology Stack Attribution &amp; Neural Engineering</h2>
-      <p>Rather than disguising established open algorithms behind proprietary marketing buzzwords, freeOCR.me proudly attributes and builds upon the extraordinary open-source software and machine learning communities. Our multi-stage pipeline integrates state-of-the-art neural networks, computer vision algorithms, and PDF remastering engines:</p>
+    <article>
+      <h1>About FreePDFToolz.me</h1>
+      <p class="lead">FreePDFToolz.me is an enterprise-grade, 100% free online PDF suite engineered to eliminate subscription paywalls, watermarks, and cloud data retention. Our mission is to provide privacy-first document utilities powered by local-first browser computing and ephemeral Linux RAM-disk processing.</p>
+      
+      <h2>1. The Privacy Problem with Modern Cloud PDF Editors</h2>
+      <p>Over the past decade, essential document manipulation—merging contracts, splitting legal briefs, compressing tax records, redacting social security numbers, and signing agreements—has been monopolized by subscription SaaS utilities that force account creation, place heavy paywalls on basic actions, and upload user files to persistent third-party object storage buckets (such as Amazon S3 or Google Cloud Storage).</p>
+      <p>When sensitive corporate or personal paperwork is uploaded to persistent cloud storage, copies linger in server filesystem journals, automated cloud backups, unindexed cache snapshots, and telemetry logs. Furthermore, several commercial converters silently parse document contents to train predictive text and machine learning models.</p>
+      
+      <h2>2. The FreePDFToolz Ephemeral Architecture (Linux tmpfs)</h2>
+      <p>FreePDFToolz.me was engineered from the ground up on an uncompromising <strong>Zero Persistent Storage Architecture</strong>:</p>
       <ul>
-        <li><strong>Baidu Unlimited OCR (PaddleOCR):</strong> A massive ~6 GB deep neural vision architecture that represents the frontier of open optical character recognition. Unlike legacy pattern-matching engines, Baidu Unlimited OCR excels at multi-column newspaper layouts, complex mathematical formulas rendered in TeX syntax, rotated text lines, dense financial tables, and multilingual character sets including Chinese, Japanese, Korean, Arabic, and Latin scripts.</li>
-        <li><strong>OCRmyPDF:</strong> The gold standard in PDF remastering, developed and maintained by open-source contributors worldwide. OCRmyPDF intelligently inspects incoming PDF streams, applies lossless image optimization, corrects page skew, and synthesizes invisible text layers adhering to ISO 32000-1 and PDF/A archiving standards.</li>
-        <li><strong>Tesseract OCR:</strong> Maintained by Google and the global open-source community, Tesseract provides battle-tested, lightning-fast character recognition for standard linear documents, letters, contracts, and single-column text.</li>
-        <li><strong>PyMuPDF &amp; Artifex MuPDF Core:</strong> High-performance C-based rendering and PDF manipulation library enabling sub-second document vectorization, automated DPI upscaling to 300 DPI, and client-side password decryption without writing decrypted files to disk.</li>
-        <li><strong>FastAPI &amp; Modern Python Asynchronous Core:</strong> Our backend microservices are orchestrated with FastAPI and Python 3.13, delivering sub-millisecond routing, strict Pydantic schema validation, and real-time Server-Sent Events (SSE) streaming for page-by-page OCR progress.</li>
+        <li><strong>Volatile Memory Only:</strong> All incoming document streams, temporary page buffers, and compiled output PDFs exist solely in Linux <code>tmpfs</code> RAM disk mounts. At no point in the conversion lifecycle is a single byte written to persistent solid-state drives (SSDs) or disk platters.</li>
+        <li><strong>Automated POSIX Unlink:</strong> The instant your processed document is delivered or downloaded, an automated POSIX <code>unlink()</code> system call destroys memory inode pointers, returning memory blocks immediately to volatile system RAM.</li>
+        <li><strong>60-Second Janitor Watchdog:</strong> A continuous daemon process sweeps the RAM disk every 60 seconds, forcefully purging any abandoned session data older than 15 minutes.</li>
+        <li><strong>Zero Model Training:</strong> We never inspect, parse, mine, or train artificial intelligence models on your documents. Your data belongs strictly to you.</li>
       </ul>
-    </div>
-
-    <div class="card">
-      <h2>🌱 3. Transparent Monetization &amp; Infrastructure Sustainability</h2>
-      <p>Running industrial-grade AI models on dedicated GPU clusters and high-core CPU servers incurs significant continuous computing, bandwidth, and electrical costs. How does freeOCR.me maintain a high-performance infrastructure without selling user data or charging subscriptions? The answer lies in radical economic transparency:</p>
+      
+      <h2>3. Built on High-Performance Open-Source Foundations</h2>
+      <p>Instead of proprietary black-box software, FreePDFToolz harnesses the world's most battle-tested, audit-verified open-source document manipulation libraries:</p>
       <ul>
-        <li><strong>Sustainable Open-Source Infrastructure:</strong> We operate lightweight, highly optimized containerized runtimes and high-efficiency model pipelines designed to keep document processing fast, accessible, and completely free without requiring user subscriptions or paid tiers.</li>
-        <li><strong>Ephemeral RAM-Disk Session Extensions:</strong> For users processing extraordinarily heavy files—such as scanned books or court dockets spanning hundreds of megabytes—we provide on-demand session limit passes. Users can instantly expand their temporary upload capacity in +50 MB increments up to a huge 1,024 MB (1 GB) without requiring user accounts or credit cards.</li>
-        <li><strong>Zero Data Monetization:</strong> We never sell telemetry, we never share document contents with third-party data brokers, and we never use your uploaded files to train commercial machine learning models. User confidentiality is permanently protected.</li>
+        <li><strong>PyMuPDF (Fitz):</strong> Ultra-fast rendering engine delivering sub-millisecond page extractions, lossless vector graphics preservation, and sub-pixel text measurement.</li>
+        <li><strong>qpdf:</strong> ISO 32000-compliant structural stream optimizer delivering true object linearization and cryptographic structure sanitization.</li>
+        <li><strong>pdf2docx:</strong> Neural layout parser that reconstructs editable Microsoft Word document flows (.docx) from rigid fixed-geometry PDF text lines, tables, and graphic elements.</li>
+        <li><strong>ReportLab & PyPDF:</strong> Precision coordinate placement for headers, footers, bates numbering, and cryptographic watermark stamping.</li>
       </ul>
-    </div>
-
-    <div class="card">
-      <h2>🛡️ 4. Kernel-Level Ephemeral RAM-Disk Security Guarantee</h2>
-      <p>In traditional cloud document processing architectures, uploaded files are written to persistent solid-state drives (SSDs) or cloud storage buckets (e.g., AWS S3 or Google Cloud Storage), where remnants and metadata can persist across filesystem journals, backups, and snapshot volumes for months or years. At freeOCR.me, user confidentiality is enforced at the operating system kernel level:</p>
+      
+      <h2>4. Complete 16-Tool Comprehensive Utility Catalog</h2>
+      <p>FreePDFToolz delivers a complete suite of 16 dedicated utilities across three core domains:</p>
       <ul>
-        <li><strong>Linux tmpfs Volatile Memory Execution:</strong> All uploaded files, intermediate page bitmaps, deskewed buffers, and OCR artifacts exist exclusively in Linux <code>tmpfs</code> RAM disk mounts. Bytes are written only to volatile DRAM chips. At no point does your document ever touch persistent storage or non-volatile physical disk platters.</li>
-        <li><strong>Instant Automated Unlink Protocols:</strong> The moment your OCR conversion finishes and your output PDF, TXT, or Markdown stream is generated, an automated file unlinking protocol executes immediately. Ephemeral file pointers are severed, and memory allocations are returned to the kernel.</li>
-        <li><strong>Autonomous Janitor &amp; Watchdog Daemon:</strong> A continuous background watchdog process monitors the RAM disk mount. Any orphaned session older than 60 minutes is forcefully unlinked, preventing memory leakage and guaranteeing that no orphaned document ever lingers.</li>
-        <li><strong>Zero Account &amp; Zero Tracking Footprint:</strong> We do not ask for your name, email address, password, or payment information. We set no profiling cookies and maintain zero database records connecting your identity to the documents you convert.</li>
+        <li><strong>Page Operations:</strong> Merge PDF, Split PDF, Rotate Pages, Delete Pages, Extract Pages, Number Pages.</li>
+        <li><strong>Security & Optimization:</strong> Compress PDF, Watermark PDF, Crop PDF, True Cryptographic Redaction, Draw & Type Signatures.</li>
+        <li><strong>AI & Transformation:</strong> PDF to Word (.docx), OCR PDF with Neural Vision, Summarize PDF, Inline Text Editing, Split by Chapter/Bookmark.</li>
       </ul>
-    </div>
+      
+      <h2>5. The Open-Source Infrastructure Model</h2>
+      <p>How does FreePDFToolz remain 100% free without selling user data or charging subscriptions? We operate on a clean, unobtrusive model powered by lightweight containerized worker runtimes. For standard files up to 100 MB, the service is completely free and instant. For massive document archives (up to 1,024 MB), users can instantly request ephemeral RAM-disk session passes to expand upload capacity, keeping the entire platform free for students, legal professionals, and small businesses globally.</p>
+    </article>
+    
+    <footer style="margin-top: 4rem; padding-top: 2rem; border-top: 1px solid rgba(255,255,255,0.08); display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1.5rem; font-size: 0.9rem; color: #64748b; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+      <div>
+        <div style="font-weight: 700; color: #f8fafc; margin-bottom: 4px;">FreePDFToolz.me</div>
+        <div>&copy; 2026 FreePDFToolz.me &bull; Ephemeral Linux RAM-Disk PDF Suite &bull; All Rights Reserved.</div>
+      </div>
+      <nav style="display: flex; flex-wrap: wrap; gap: 1.25rem;">
+        <a href="/hub" style="color: #818cf8; text-decoration: none;">All 16 PDF Tools</a>
+        <a href="/kb/pdf-merge-guide" style="color: #818cf8; text-decoration: none;">Merge Guide</a>
+        <a href="/kb/pdf-compression-guide" style="color: #818cf8; text-decoration: none;">Compression Guide</a>
+        <a href="/kb/cryptographic-redaction" style="color: #818cf8; text-decoration: none;">Redaction Guide</a>
+        <a href="/about" style="color: #818cf8; text-decoration: none;">About Us</a>
+        <a href="/contact" style="color: #818cf8; text-decoration: none;">Contact</a>
+        <a href="/privacy" style="color: #818cf8; text-decoration: none;">Privacy Policy</a>
+        <a href="/terms" style="color: #818cf8; text-decoration: none;">Terms of Service</a>
+      </nav>
+    </footer>
   </main>
-
-
-  <footer>
-    <div class="footer-grid">
-      <div class="footer-col">
-        <h3>freeOCR.me</h3>
-        <p style="color: var(--text-muted); font-size: 0.88rem; line-height: 1.5;">
-          Privacy-First Ephemeral OCR Platform.<br>
-          Files processed in volatile Linux RAM disk.
-        </p>
-        <div class="social-row">
-          <a href="https://x.com/freeocrme" class="social-btn" title="Twitter / X" target="_blank" rel="noopener">𝕏</a>
-          <a href="https://instagram.com/freeocrme" class="social-btn" title="Instagram" target="_blank"
-            rel="noopener">📷</a>
-          <a href="https://facebook.com/freeOCRme" class="social-btn" title="Facebook" target="_blank"
-            rel="noopener">fb</a>
-        </div>
-      </div>
-      <div class="footer-col">
-        <h3>Navigation</h3>
-        <ul class="footer-links">
-          <li><a href="/">Home</a></li>
-          <li><a href="/about">About Us</a></li>
-          <li><a href="/knowledge-base">Knowledge Base</a></li>
-        </ul>
-      </div>
-      <div class="footer-col">
-        <h3>Engines</h3>
-        <ul class="footer-links">
-          <li><a href="https://github.com/PaddlePaddle/PaddleOCR" target="_blank" rel="noopener">Baidu OCR</a></li>
-          <li><a href="https://github.com/tesseract-ocr/tesseract" target="_blank" rel="noopener">Tesseract</a></li>
-          <li><a href="https://github.com/ocrmypdf/OCRmyPDF" target="_blank" rel="noopener">OCRmyPDF</a></li>
-          <li><a href="https://github.com/pymupdf/PyMuPDF" target="_blank" rel="noopener">PyMuPDF</a></li>
-        </ul>
-      </div>
-      <div class="footer-col">
-        <h3>Legal & Support</h3>
-        <ul class="footer-links">
-          <li><a href="/privacy">Privacy Policy</a></li>
-          <li><a href="/terms">Terms of Service</a></li>
-          <li><a href="/contact">Contact Us</a></li>
-        </ul>
-      </div>
-    </div>
-    <div class="footer-bottom">
-      &copy; 2026 freeOCR.me &bull; All files processed exclusively in Linux RAM disk (tmpfs).
-    </div>
-  </footer>
-
-  <script>
-    var toggleBtn = document.getElementById('themeToggleBtn');
-    var sunIcon = document.getElementById('sunIcon');
-    var moonIcon = document.getElementById('moonIcon');
-
-    function updateIcons(t) {
-      if (t === 'dark') {
-        sunIcon.style.display = 'block';
-        moonIcon.style.display = 'none';
-      } else {
-        sunIcon.style.display = 'none';
-        moonIcon.style.display = 'block';
-      }
-    }
-
-    var currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
-    updateIcons(currentTheme);
-
-    toggleBtn.addEventListener('click', function () {
-      var active = document.documentElement.getAttribute('data-theme') || 'light';
-      var next = active === 'dark' ? 'light' : 'dark';
-      document.documentElement.setAttribute('data-theme', next);
-      try {
-        localStorage.setItem('freeocr_theme', next);
-      } catch (e) { }
-      updateIcons(next);
-    });
-  </script>
 </body>
-
 </html>

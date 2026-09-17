@@ -17,7 +17,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Verify Brand title & Privacy commitment text
-      expect(find.text('freeOCR.me'), findsOneWidget);
+      expect(find.text('FreePDFToolz'), findsOneWidget);
       expect(find.textContaining('RAM disk'), findsOneWidget);
 
       // Verify Navigation Buttons

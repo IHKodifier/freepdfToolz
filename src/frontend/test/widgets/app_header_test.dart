@@ -45,7 +45,7 @@ void main() {
       expect(find.byKey(const Key('header_home_btn')), findsOneWidget);
       expect(find.byKey(const Key('header_kb_btn')), findsOneWidget);
       expect(find.byKey(const Key('header_docs_btn')), findsNothing);
-      expect(find.byKey(const Key('header_tools_btn')), findsNothing);
+      expect(find.byKey(const Key('header_tools_btn')), findsOneWidget);
 
       // Verify Theme Switcher Button & tap action
       final themeToggleBtn = find.byKey(const Key('header_theme_toggle_btn'));

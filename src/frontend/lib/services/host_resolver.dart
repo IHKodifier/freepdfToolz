@@ -8,7 +8,7 @@ enum AppBrand {
 class HostResolver {
   /// Detects the active brand according to host, query params, or Uri.base
   static AppBrand getBrand({Uri? uri}) {
-    final targetUri = uri ?? (kIsWeb ? Uri.base : Uri.parse('https://freeocr.me/'));
+    final targetUri = uri ?? (kIsWeb ? Uri.base : Uri.parse('https://freepdftoolz.me/'));
     
     // 1. Explicit query parameter override (useful for testing and local dev)
     final brandParam = targetUri.queryParameters['brand']?.toLowerCase();
@@ -21,13 +21,15 @@ class HostResolver {
 
     // 2. Domain / Host sniffing
     final host = targetUri.host.toLowerCase();
+    if (host.contains('freeocr')) {
+      return AppBrand.freeOcr;
+    }
     if (host.contains('freepdftoolz') || host.contains('tools.localhost')) {
       return AppBrand.freePdfTools;
     }
 
-    // 3. Default to FreeOCR (including freeocr.me, freeocr-staging-app.web.app, localhost default)
-    // This ensures zero disturbance to freeOCR AdSense review!
-    return AppBrand.freeOcr;
+    // 3. Standalone FreePDFToolz workspace default
+    return AppBrand.freePdfTools;
   }
 
   static bool isFreeOcrDomain({Uri? uri}) {
