@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:free_ocr_frontend/main.dart';
-import 'package:free_ocr_frontend/pages/pdf_tools_hub_page.dart';
+import 'package:freepdftoolz_frontend/main.dart';
+import 'package:freepdftoolz_frontend/pages/pdf_tools_hub_page.dart';
 
 void main() {
-  testWidgets('App renders FreePDFToolz hub and uses Material 3 theme', (WidgetTester tester) async {
+  testWidgets('App renders FreePDFToolz hub and uses Material 3 theme', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(const FreeOcrApp());
     await tester.pumpAndSettle();
 

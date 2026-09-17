@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:free_ocr_frontend/utils/app_limits_config.dart';
+import 'package:freepdftoolz_frontend/utils/app_limits_config.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

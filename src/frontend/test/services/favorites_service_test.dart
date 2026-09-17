@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:free_ocr_frontend/services/favorites_service.dart';
+import 'package:freepdftoolz_frontend/services/favorites_service.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -15,23 +15,28 @@ void main() {
     expect(FavoritesService.isFavorite('merge'), isFalse);
   });
 
-  test('FavoritesService toggles favorite and persists to SharedPreferences', () async {
-    expect(FavoritesService.isFavorite('merge'), isFalse);
+  test(
+    'FavoritesService toggles favorite and persists to SharedPreferences',
+    () async {
+      expect(FavoritesService.isFavorite('merge'), isFalse);
 
-    await FavoritesService.toggleFavorite('merge');
-    expect(FavoritesService.isFavorite('merge'), isTrue);
-    expect(FavoritesService.getFavorites(), contains('merge'));
+      await FavoritesService.toggleFavorite('merge');
+      expect(FavoritesService.isFavorite('merge'), isTrue);
+      expect(FavoritesService.getFavorites(), contains('merge'));
 
-    // Toggle off
-    await FavoritesService.toggleFavorite('merge');
-    expect(FavoritesService.isFavorite('merge'), isFalse);
-    expect(FavoritesService.getFavorites(), isNot(contains('merge')));
-  });
+      // Toggle off
+      await FavoritesService.toggleFavorite('merge');
+      expect(FavoritesService.isFavorite('merge'), isFalse);
+      expect(FavoritesService.getFavorites(), isNot(contains('merge')));
+    },
+  );
 
   test('FavoritesService notifies listeners when favorites change', () async {
     final notifications = <Set<String>>[];
     FavoritesService.favoritesNotifier.addListener(() {
-      notifications.add(Set<String>.from(FavoritesService.favoritesNotifier.value));
+      notifications.add(
+        Set<String>.from(FavoritesService.favoritesNotifier.value),
+      );
     });
 
     await FavoritesService.toggleFavorite('split');

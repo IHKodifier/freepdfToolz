@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:free_ocr_frontend/main.dart';
+import 'package:freepdftoolz_frontend/main.dart';
 
 void main() {
-  testWidgets('AppBar contains Theme Toggle button and toggles theme mode',
-      (WidgetTester tester) async {
+  testWidgets('AppBar contains Theme Toggle button and toggles theme mode', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(const FreeOcrApp());
     await tester.pumpAndSettle();
 

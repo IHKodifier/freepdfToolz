@@ -129,61 +129,18 @@ class _ToolCardState extends State<ToolCard> {
                 _buildBadge(widget.badge!),
               ],
               const SizedBox(width: 4),
-              // Heart / Favorite Toggle Button with Lively Spring Animation
+              // Heart / Favorite Toggle Button with Lively Spring & Ripple State-Change Animation
               ValueListenableBuilder<Set<String>>(
                 valueListenable: FavoritesService.favoritesNotifier,
                 builder: (context, favorites, _) {
                   final isFav = favorites.contains(widget.id);
-                  return Tooltip(
-                    message: isFav ? 'Remove from favorites' : 'Add to favorites',
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(16),
-                        onTap: () {
-                          FavoritesService.toggleFavorite(widget.id);
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.all(5.0),
-                          child: AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 320),
-                            switchInCurve: Curves.elasticOut,
-                            switchOutCurve: Curves.easeInCubic,
-                            transitionBuilder: (child, anim) {
-                              return ScaleTransition(
-                                scale: Tween<double>(begin: 0.5, end: 1.0).animate(anim),
-                                child: RotationTransition(
-                                  turns: Tween<double>(begin: isFav ? -0.06 : 0.06, end: 0.0).animate(anim),
-                                  child: child,
-                                ),
-                              );
-                            },
-                            child: Container(
-                              key: ValueKey<bool>(isFav),
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                boxShadow: isFav
-                                    ? [
-                                        BoxShadow(
-                                          color: const Color(0xFFF43F5E).withValues(alpha: 0.35),
-                                          blurRadius: 8,
-                                          spreadRadius: 1,
-                                        ),
-                                      ]
-                                    : null,
-                              ),
-                              child: SemanticHeartIcon(
-                                isFilled: isFav,
-                                size: 15,
-                                color: isFav
-                                    ? const Color(0xFFF43F5E) // Vibrant rose-500
-                                    : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
+                  return FavoriteHeartButton(
+                    key: ValueKey('fav_btn_${widget.id}'),
+                    isFav: isFav,
+                    isDark: isDark,
+                    onToggle: () {
+                      FavoritesService.toggleFavorite(widget.id);
+                    },
                   );
                 },
               ),
@@ -248,6 +205,109 @@ class _ToolCardState extends State<ToolCard> {
       default:
         return primaryColor;
     }
+  }
+}
+
+/// Animated Favorite Heart Toggle with Spring Scale Pop and Unconstrained Visual Footprint
+class FavoriteHeartButton extends StatefulWidget {
+  final bool isFav;
+  final VoidCallback onToggle;
+  final bool isDark;
+
+  const FavoriteHeartButton({
+    super.key,
+    required this.isFav,
+    required this.onToggle,
+    required this.isDark,
+  });
+
+  @override
+  State<FavoriteHeartButton> createState() => _FavoriteHeartButtonState();
+}
+
+class _FavoriteHeartButtonState extends State<FavoriteHeartButton> {
+  bool _isPopping = false;
+  bool _isHovered = false;
+
+  void _triggerPop() {
+    if (mounted) {
+      setState(() {
+        _isPopping = true;
+      });
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant FavoriteHeartButton oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isFav != oldWidget.isFav && !_isPopping) {
+      _triggerPop();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isFav = widget.isFav;
+    final inactiveColor = widget.isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+    const activeColor = Color(0xFFF43F5E);
+
+    return Tooltip(
+      message: isFav ? 'Remove from favorites' : 'Add to favorites',
+      child: MouseRegion(
+        onEnter: (_) => setState(() => _isHovered = true),
+        onExit: (_) => setState(() => _isHovered = false),
+        cursor: SystemMouseCursors.click,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () {
+            _triggerPop();
+            widget.onToggle();
+          },
+          child: SizedBox(
+            width: 32,
+            height: 32,
+            child: Stack(
+              alignment: Alignment.center,
+              clipBehavior: Clip.none, // Explicitly prevent parent clipping
+              children: [
+                // Background subtle hover/pop halo ring
+                AnimatedContainer(
+                  duration: Duration(milliseconds: _isPopping ? 450 : 300),
+                  width: _isPopping ? 38 : 30,
+                  height: _isPopping ? 38 : 30,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: _isPopping
+                        ? activeColor.withValues(alpha: 0.22)
+                        : (_isHovered
+                            ? activeColor.withValues(alpha: isFav ? 0.16 : 0.08)
+                            : Colors.transparent),
+                  ),
+                ),
+                // Prominent Heart Icon: animates to 1.75x (31.5px) and onEnd springs back to 1.0x (900ms total)
+                AnimatedScale(
+                  scale: _isPopping ? 1.75 : (_isHovered ? 1.12 : 1.0),
+                  duration: Duration(milliseconds: _isPopping ? 500 : 400),
+                  curve: _isPopping ? Curves.easeOutBack : Curves.easeInOutCubic,
+                  onEnd: () {
+                    if (_isPopping && mounted) {
+                      setState(() {
+                        _isPopping = false;
+                      });
+                    }
+                  },
+                  child: SemanticHeartIcon(
+                    isFilled: isFav,
+                    size: 18,
+                    color: isFav ? activeColor : inactiveColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 

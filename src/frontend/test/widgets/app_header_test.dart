@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:free_ocr_frontend/widgets/app_header.dart';
+import 'package:freepdftoolz_frontend/widgets/app_header.dart';
 
 void main() {
   Widget buildTestWidget({
@@ -62,10 +62,7 @@ void main() {
     (WidgetTester tester) async {
       await tester.pumpWidget(
         buildTestWidget(
-          child: const AppHeader(
-            currentRoute: '/',
-            showTools: true,
-          ),
+          child: const AppHeader(currentRoute: '/', showTools: true),
         ),
       );
       await tester.pumpAndSettle();
