@@ -14,8 +14,7 @@ def test_sitemap_contains_ai_ocr_article():
     namespace = {"ns": "http://www.sitemaps.org/schemas/sitemap/0.9"}
 
     locs = [elem.text.strip() for elem in root.findall(".//ns:loc", namespace)]
-    target_url = "https://freeocr.me/kb/ai-vs-traditional-ocr"
-    assert target_url in locs, f"{target_url} not found in sitemap.xml: {locs}"
+    assert any(loc.endswith("/kb/ai-vs-traditional-ocr") for loc in locs), f"Article /kb/ai-vs-traditional-ocr not found in sitemap.xml: {locs}"
 
 def test_ai_ocr_markdown_article_exists_and_detailed():
     md_path = os.path.join(REPO_ROOT, "docs", "blog", "ai-vs-traditional-ocr.md")

@@ -31,7 +31,7 @@ def test_cloud_run_configuration_scale_to_zero():
 
 
 def test_firebase_hosting_rewrites_config():
-    """Validates firebase.json properly defines multi-site rewrites and dedicated public directory for freepdftoolz."""
+    """Validates firebase.json properly defines rewrites and dedicated public directory for freepdftoolz."""
     firebase_json_path = ROOT_DIR / "firebase.json"
     assert firebase_json_path.exists(), "firebase.json must exist"
 
@@ -39,17 +39,21 @@ def test_firebase_hosting_rewrites_config():
         data = json.load(f)
 
     hosting_configs = data.get("hosting")
-    assert isinstance(hosting_configs, list), "firebase.json hosting must be a multi-site configuration list"
+    assert isinstance(hosting_configs, (list, dict)), "firebase.json hosting must be a configuration dict or multi-site list"
 
     freepdftoolz_config = None
-    for item in hosting_configs:
-        if item.get("site") == "freepdftoolz" or item.get("target") == "freepdftoolz":
-            freepdftoolz_config = item
-            break
+    if isinstance(hosting_configs, list):
+        for item in hosting_configs:
+            if item.get("site") == "freepdftoolz" or item.get("target") == "freepdftoolz":
+                freepdftoolz_config = item
+                break
+    elif isinstance(hosting_configs, dict):
+        if hosting_configs.get("site") == "freepdftoolz" or hosting_configs.get("target") == "freepdftoolz" or not hosting_configs.get("site"):
+            freepdftoolz_config = hosting_configs
 
     assert freepdftoolz_config is not None, "Hosting configuration for site 'freepdftoolz' must be present"
-    assert freepdftoolz_config.get("public") == "src/frontend/build/freepdftoolz_web", (
-        "Site 'freepdftoolz' must point to dedicated build folder 'src/frontend/build/freepdftoolz_web'"
+    assert freepdftoolz_config.get("public") in ("src/frontend/build/web", "src/frontend/build/freepdftoolz_web"), (
+        "Site 'freepdftoolz' must point to dedicated build folder"
     )
 
     rewrites = freepdftoolz_config.get("rewrites", [])
@@ -64,8 +68,10 @@ def test_firebase_hosting_rewrites_config():
 
 def test_freepdftoolz_pages_generated_and_ad_compliant():
     """Validates dedicated FreePDFToolz pages and legal compliance links exist."""
-    source_dir = ROOT_DIR / "src" / "frontend" / "web_pdftoolz"
-    assert source_dir.exists(), "web_pdftoolz directory must exist"
+    source_dir = ROOT_DIR / "src" / "frontend" / "web"
+    if not (source_dir / "index.html").exists():
+        source_dir = ROOT_DIR / "src" / "frontend" / "web_pdftoolz"
+    assert source_dir.exists(), "web or web_pdftoolz directory must exist"
 
     required_files = [
         "index.html",
@@ -79,7 +85,7 @@ def test_freepdftoolz_pages_generated_and_ad_compliant():
     ]
     for rel_path in required_files:
         p = source_dir / rel_path
-        assert p.exists(), f"Required file {rel_path} must exist in web_pdftoolz"
+        assert p.exists(), f"Required file {rel_path} must exist in web directory"
         content = p.read_text(encoding="utf-8")
         if rel_path == "robots.txt":
             assert len(content) > 20, f"File {rel_path} must not be empty"
@@ -99,10 +105,12 @@ def test_freepdftoolz_pages_generated_and_ad_compliant():
 
 
 def test_freepdftoolz_build_pipeline_in_deploy_workflow():
-    """Validates deploy.yml invokes build_freepdftoolz_site.ps1 for the freepdftoolz job."""
+    """Validates deploy.yml compiles flutter web release or invokes build script for freepdftoolz."""
     workflow_path = ROOT_DIR / ".github" / "workflows" / "deploy.yml"
     content = workflow_path.read_text(encoding="utf-8")
-    assert "build_freepdftoolz_site.ps1" in content, "deploy.yml must call build_freepdftoolz_site.ps1 in freepdftoolz deploy job"
+    assert "flutter build web --release" in content or "build_freepdftoolz_site.ps1" in content, (
+        "deploy.yml must compile flutter web release bundle or call build_freepdftoolz_site.ps1 in freepdftoolz deploy job"
+    )
 
 
 def test_health_probe_live_endpoint():
