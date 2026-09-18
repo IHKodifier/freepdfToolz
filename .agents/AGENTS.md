@@ -1,12 +1,12 @@
-# Antigravity Agent Rules — freeOCR.me Engineering Governance
+# Antigravity Agent Rules — FreePDFToolz Engineering Governance
 
-> Engineering governance for **freeOCR.me** (Scanned PDF to Searchable PDF/Text Web Platform). Read this before any code change.  
+> Engineering governance for **FreePDFToolz** (100% Free Online PDF Suite & AI Document Intelligence Platform). Read this before any code change.  
 > Master Spec: `product-specs/08-master-prd.md` | Backlog: `product-specs/06a-use-case-tickets.md` | Master Tracker: `trackers/master-tracker.md`
 
 ---
 
 ## 1. Directory Location & Rule Loading
-- **Canonical Path:** This file lives at [`.agents/AGENTS.md`](file:///e:/Non_Office/Dev_Space/vibe_skool/freeOcr/.agents/AGENTS.md) as the single canonical engineering governance document for this repository.
+- **Canonical Path:** This file lives at [`.agents/AGENTS.md`](file:///e:/Non_Office/Dev_Space/vibe_skool/freepdftoolz/.agents/AGENTS.md) as the single canonical engineering governance document for this repository.
 - **Purpose:** Antigravity and other agentic AI assistants automatically discover and enforce directives from this file across all coding sessions in this workspace.
 
 ---
@@ -25,13 +25,10 @@
 - **NO Unprompted Local Commits:** The agent MUST NEVER run `git commit` locally without explicit user instruction. The user selects which files are committed and instructs when to execute local commits.
 - **NO Unprompted Remote Pushes:** The agent MUST NEVER execute `git push` to any remote repository without explicit user instructions to publish code to remote.
 
-### 2.2 Selective Dual-Domain Deployment Protocol
-- **Interactive UI Modal Mandate:** Whenever the user instructs Antigravity to merge to `dev` or `main` or execute `git push`, Antigravity MUST prompt the user using `ask_question` with the following selectable options:
-  1. `(•) freeocr.me (Only)` — Tags merge/commit with `[deploy:freeocr]`
-  2. `( ) freepdftoolz.me (Only)` — Tags merge/commit with `[deploy:freepdftoolz]`
-  3. `( ) Both (freeocr.me + freepdftoolz.me)` — Tags merge/commit with `[deploy:both]`
-  4. `( ) Skip Deployment (Automated Tests Only)` — Tags merge/commit with `[skip deploy]`
-- **Zero Accidental Deployments:** Commits without an explicit `[deploy:...]` tag will trigger only automated test suites (`ci.yml` and `test-backend`/`test-frontend` in `deploy.yml`) and will never deploy to GCP Cloud Run or Firebase Hosting. This guarantees 100% protection for `freeocr.me` during Google AdSense review.
+### 2.2 FreePDFToolz Deployment Protocol
+- **Standalone Continuous Deployment:** Pushing or merging to `dev` automatically deploys to Staging (`freepdftoolz.web.app`), and pushing or merging to `main` automatically deploys to Production (`https://freepdftoolz.me`).
+- **Skip Deployment:** Include `[skip deploy]` in the commit message if you only want to execute automated test suites without triggering cloud deployment.
+- **No Interactive Target Prompts:** Do NOT prompt the user with domain selection modals (`ask_question`). All pushes in this repository directly target `freepdftoolz`.
 
 ---
 
