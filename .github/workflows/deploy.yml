@@ -68,17 +68,11 @@ jobs:
     if: "!contains(github.event.head_commit.message, '[skip deploy]')"
     env:
       DEPLOY_ENV: ${{ github.event_name == 'workflow_dispatch' && inputs.environment || (github.ref == 'refs/heads/main' && 'production' || 'staging') }}
-      GCP_PROJECT: ${{ (github.event_name == 'workflow_dispatch' && inputs.environment == 'production' || github.ref == 'refs/heads/main') && (vars.FREEPDFTOOLZ_PROD_PROJECT || 'freepdftoolz-prod') || (vars.FREEPDFTOOLZ_STAGING_PROJECT || 'freeocr-staging-app') }}
+      GCP_PROJECT: ${{ (github.event_name == 'workflow_dispatch' && inputs.environment == 'production' || github.ref == 'refs/heads/main') && (vars.FREEPDFTOOLZ_PROD_PROJECT || 'freeocr-staging-app') || (vars.FREEPDFTOOLZ_STAGING_PROJECT || 'freeocr-staging-app') }}
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
-
-      - name: Set up Python 3.13
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.13'
-          cache: 'pip'
 
       - name: Set up Flutter SDK (Cached)
         uses: subosito/flutter-action@v2
@@ -95,7 +89,7 @@ jobs:
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
-          credentials_json: ${{ secrets.GCP_SA_KEY_PDFTOOLZ || secrets.GCP_SA_KEY }}
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
 
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
@@ -125,7 +119,7 @@ jobs:
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
-          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_PDFTOOLZ || secrets.GCP_SA_KEY_PDFTOOLZ || secrets.GCP_SA_KEY }}
+          firebaseServiceAccount: ${{ secrets.GCP_SA_KEY }}
           channelId: live
           projectId: ${{ env.GCP_PROJECT }}
           target: freepdftoolz
