@@ -46,6 +46,9 @@ class _PdfMergeProgressPageState extends State<PdfMergeProgressPage> {
   bool _isDragging = false;
   final Map<String, Uint8List?> _fileThumbnails = {};
   final Set<String> _loadingThumbnailFiles = {};
+  bool _isUploadingThumbnails = false;
+  int _thumbnailSentBytes = 0;
+  int _thumbnailTotalBytes = 0;
 
   @override
   void initState() {
@@ -65,18 +68,38 @@ class _PdfMergeProgressPageState extends State<PdfMergeProgressPage> {
     final key = file.name;
     if (_fileThumbnails.containsKey(key) || _loadingThumbnailFiles.contains(key)) return;
     _loadingThumbnailFiles.add(key);
+    setState(() {
+      _isUploadingThumbnails = true;
+      _thumbnailSentBytes = 0;
+      _thumbnailTotalBytes = file.sizeBytes;
+    });
     try {
-      final res = await PdfThumbnailService.fetchThumbnails(file);
+      final res = await PdfThumbnailService.fetchThumbnails(
+        file,
+        onProgress: (sent, total) {
+          if (mounted) {
+            setState(() {
+              _thumbnailSentBytes = sent;
+              _thumbnailTotalBytes = total;
+              if (sent >= total) {
+                _isUploadingThumbnails = false;
+              }
+            });
+          }
+        },
+      );
       if (mounted) {
         setState(() {
           _fileThumbnails[key] = res.getPageBytes(0);
           _loadingThumbnailFiles.remove(key);
+          _isUploadingThumbnails = false;
         });
       }
     } catch (_) {
       if (mounted) {
         setState(() {
           _loadingThumbnailFiles.remove(key);
+          _isUploadingThumbnails = false;
         });
       }
     }
@@ -400,6 +423,16 @@ class _PdfMergeProgressPageState extends State<PdfMergeProgressPage> {
                         if (_mergedPdfBytes != null)
                           _buildSuccessCard(theme, isDark)
                         else ...[
+                          if (_isUploadingThumbnails || _loadingThumbnailFiles.isNotEmpty) ...[
+                            ToolUploadProgressIndicator(
+                              sentBytes: _thumbnailSentBytes,
+                              totalBytes: _thumbnailTotalBytes,
+                              isUploading: _isUploadingThumbnails,
+                              processingLabel: 'Generating visual page previews in Linux tmpfs RAM disk...',
+                              accentColor: const Color(0xFFEF4444),
+                            ),
+                            const SizedBox(height: 20),
+                          ],
                           _buildFilesManagerCard(theme, isDark),
                           const SizedBox(height: 24),
                           if (_isMerging) ...[

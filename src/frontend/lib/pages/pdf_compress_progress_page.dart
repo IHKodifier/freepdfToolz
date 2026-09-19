@@ -42,6 +42,9 @@ class _PdfCompressProgressPageState extends State<PdfCompressProgressPage> {
   String? _errorMessage;
   PdfThumbnailResult? _thumbnailResult;
   bool _isLoadingThumbnail = false;
+  bool _isUploadingThumbnail = false;
+  int _thumbnailSentBytes = 0;
+  int _thumbnailTotalBytes = 0;
 
   // Compression Result Metrics
   Uint8List? _resultBytes;
@@ -86,12 +89,31 @@ class _PdfCompressProgressPageState extends State<PdfCompressProgressPage> {
   }
 
   Future<void> _loadThumbnail(SelectedPdfFile file) async {
-    setState(() => _isLoadingThumbnail = true);
-    final result = await PdfThumbnailService.fetchThumbnails(file);
+    setState(() {
+      _isLoadingThumbnail = true;
+      _isUploadingThumbnail = true;
+      _thumbnailSentBytes = 0;
+      _thumbnailTotalBytes = file.sizeBytes;
+    });
+    final result = await PdfThumbnailService.fetchThumbnails(
+      file,
+      onProgress: (sent, total) {
+        if (mounted) {
+          setState(() {
+            _thumbnailSentBytes = sent;
+            _thumbnailTotalBytes = total;
+            if (sent >= total) {
+              _isUploadingThumbnail = false;
+            }
+          });
+        }
+      },
+    );
     if (!mounted) return;
     setState(() {
       _thumbnailResult = result;
       _isLoadingThumbnail = false;
+      _isUploadingThumbnail = false;
       if (result.isSuccess && result.totalPages > 0) {
         _detectedPages = result.totalPages;
       }
@@ -295,6 +317,16 @@ class _PdfCompressProgressPageState extends State<PdfCompressProgressPage> {
                   // Document Overview Card
                   if (_file != null) _buildDocumentOverviewCard(isDark),
                   const SizedBox(height: 24),
+
+                  if (_isLoadingThumbnail) ...[
+                    ToolUploadProgressIndicator(
+                      sentBytes: _thumbnailSentBytes,
+                      totalBytes: _thumbnailTotalBytes,
+                      isUploading: _isUploadingThumbnail,
+                      processingLabel: 'Generating visual page previews in Linux tmpfs RAM disk...',
+                    ),
+                    const SizedBox(height: 20),
+                  ],
 
                   if (_errorMessage != null) ...[
                     Container(

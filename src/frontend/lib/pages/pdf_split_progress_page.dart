@@ -44,6 +44,9 @@ class _PdfSplitProgressPageState extends State<PdfSplitProgressPage> {
   String? _validationWarning;
   PdfThumbnailResult? _thumbnailResult;
   bool _isLoadingThumbnail = false;
+  bool _isUploadingThumbnail = false;
+  int _thumbnailSentBytes = 0;
+  int _thumbnailTotalBytes = 0;
 
   // Split result
   Uint8List? _resultBytes;
@@ -94,12 +97,31 @@ class _PdfSplitProgressPageState extends State<PdfSplitProgressPage> {
   }
 
   Future<void> _loadThumbnail(SelectedPdfFile file) async {
-    setState(() => _isLoadingThumbnail = true);
-    final result = await PdfThumbnailService.fetchThumbnails(file);
+    setState(() {
+      _isLoadingThumbnail = true;
+      _isUploadingThumbnail = true;
+      _thumbnailSentBytes = 0;
+      _thumbnailTotalBytes = file.sizeBytes;
+    });
+    final result = await PdfThumbnailService.fetchThumbnails(
+      file,
+      onProgress: (sent, total) {
+        if (mounted) {
+          setState(() {
+            _thumbnailSentBytes = sent;
+            _thumbnailTotalBytes = total;
+            if (sent >= total) {
+              _isUploadingThumbnail = false;
+            }
+          });
+        }
+      },
+    );
     if (!mounted) return;
     setState(() {
       _thumbnailResult = result;
       _isLoadingThumbnail = false;
+      _isUploadingThumbnail = false;
       if (result.isSuccess && result.totalPages > 0) {
         _detectedPages = result.totalPages;
       }
@@ -478,6 +500,16 @@ class _PdfSplitProgressPageState extends State<PdfSplitProgressPage> {
                   ),
                 ),
                 const SizedBox(height: 24),
+
+                if (_isLoadingThumbnail) ...[
+                  ToolUploadProgressIndicator(
+                    sentBytes: _thumbnailSentBytes,
+                    totalBytes: _thumbnailTotalBytes,
+                    isUploading: _isUploadingThumbnail,
+                    processingLabel: 'Generating visual page previews in Linux tmpfs RAM disk...',
+                    accentColor: const Color(0xFF0969DA),
+                  ),
+                ],
 
                 // If result is ready, display Download Card
                 if (_resultBytes != null) ...[
