@@ -8,9 +8,10 @@
 ## Overall Progress
 
 - **Total Backlog Tickets:** 39 Tickets (`UC-000a`..`UC-015`, `UC-005b`, `UC-009-GAM`, `UC-016`..`UC-030`, `UC-032`..`UC-035`)
-- **Completed:** 29 / 39 (74%)
+- **Total Backlog Tickets:** 39 Tickets (`UC-000a`..`UC-015`, `UC-005b`, `UC-009-GAM`, `UC-016`..`UC-030`, `UC-032`..`UC-035`)
+- **Completed:** 30 / 39 (77%)
 - **Current Active Sprint:** Sprint F3 — FreePDFToolz AI, Conversions, Custom Domain & Live Launch (`UC-028`..`UC-030`, `UC-032`..`UC-034`) + freeOCR.me AdSense Editorial Content (`UC-035`)
-- **Last Updated:** 2026-09-16 — Completed UC-034 (FreePDFToolz Google Analytics 4 Telemetry & Domain-Aware Tracking). All tests PASS.
+- **Last Updated:** 2026-09-20 — Completed UC-028 (Annotate PDF Engine & Drawing Toolbar). All tests PASS.
 
 ---
 
@@ -24,7 +25,8 @@
 | **Phase 1** | **Sprint 3: Ad Monetization, GA4 & AdSense Content** | UC-009, UC-010, UC-011, UC-014, UC-015 | 5 / 5 | 100% | Completed |
 | **Phase 3** | **Sprint F1: Page Operations Hub** | UC-016, UC-017, UC-018, UC-019, UC-020, UC-021, UC-022 | 7 / 7 | 100% | Completed |
 | **Phase 3** | **Sprint F2: Transformation & Security** | UC-023, UC-024, UC-025, UC-026, UC-027 | 5 / 5 | 100% | Completed |
-| **Phase 3** | **Sprint F3: AI, Conversions & Live Launch** | UC-028, UC-029, UC-030, UC-032, UC-033, UC-034 | 2 / 6 | 33% | In Progress |
+| **Phase 3** | **Sprint F3: AI, Conversions & Live Launch** | UC-028, UC-029, UC-030, UC-032, UC-033, UC-034 | 3 / 6 | 50% | In Progress |
+
 
 ---
 
@@ -75,7 +77,7 @@
 | **UC-025** | Crop PDF Engine & Visual Bounding Box Trimmer | Sprint F2 | P1 | Completed | PASS |
 | **UC-026** | Redact PDF Engine (True Cryptographic Glyph Sanitization) | Sprint F2 | P0 | Completed | PASS |
 | **UC-027** | Sign PDF Engine & Flutter Signature Canvas Pad | Sprint F2 | P0 | Completed | PASS |
-| **UC-028** | Annotate PDF Engine (Highlights, Rectangles, Sticky Notes) | Sprint F3 | P1 | Queued | Pending |
+| **UC-028** | Annotate PDF Engine (Highlights, Rectangles, Sticky Notes) | Sprint F3 | P1 | Completed | PASS |
 | **UC-029** | Edit Text in PDF Engine (Visual Redact-and-Replace & Overlays) | Sprint F3 | P1 | Queued | Pending |
 | **UC-030** | Convert PDF to Word (.docx) via `pdf2docx` Engine | Sprint F3 | P0 | Queued | Pending |
 | **UC-032** | Original Educational SEO Content Hub & AdSense Indexation | Sprint F3 | P0 | Queued | Pending |

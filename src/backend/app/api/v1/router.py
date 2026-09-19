@@ -16,6 +16,7 @@ from app.api.v1.endpoints import (
     tools_crop,
     tools_redact,
     tools_sign,
+    tools_annotate,
     tools_thumbnails,
 )
 
@@ -37,6 +38,8 @@ api_router.include_router(tools_watermark.router, prefix="/tools", tags=["PDF To
 api_router.include_router(tools_crop.router, prefix="/tools", tags=["PDF Tools - Crop"])
 api_router.include_router(tools_redact.router, prefix="/tools", tags=["PDF Tools - Redact"])
 api_router.include_router(tools_sign.router, prefix="/tools", tags=["PDF Tools - Sign"])
+api_router.include_router(tools_annotate.router, prefix="/tools", tags=["PDF Tools - Annotate"])
+
 
 
 

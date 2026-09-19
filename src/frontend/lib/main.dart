@@ -44,6 +44,8 @@ import 'pages/pdf_redact_page.dart';
 import 'pages/pdf_redact_progress_page.dart';
 import 'pages/pdf_sign_page.dart';
 import 'pages/pdf_sign_progress_page.dart';
+import 'pages/pdf_annotate_page.dart';
+import 'pages/pdf_annotate_progress_page.dart';
 import 'widgets/expired_link_view.dart';
 import 'utils/url_strategy_helper.dart';
 import 'utils/theme_storage_helper.dart';
@@ -327,6 +329,30 @@ class FreeOcrApp extends StatelessWidget {
                 settings: settings,
               );
             }
+
+            // Dedicated Annotate PDF route (UC-028)
+            if (name == '/annotate') {
+              return MaterialPageRoute(
+                builder: (context) => const PdfAnnotatePage(),
+                settings: settings,
+              );
+            }
+
+            // Dedicated Annotate PDF Status & Progress route (UC-028)
+            if (name == '/annotate/process') {
+              final args = settings.arguments;
+              SelectedPdfFile? file;
+              if (args is SelectedPdfFile) {
+                file = args;
+              } else if (args is Map<String, dynamic> && args['file'] is SelectedPdfFile) {
+                file = args['file'] as SelectedPdfFile;
+              }
+              return MaterialPageRoute(
+                builder: (context) => PdfAnnotateProgressPage(file: file),
+                settings: settings,
+              );
+            }
+
 
             // Specific PDF tools route matching
             if (name != null && name.startsWith('/')) {
