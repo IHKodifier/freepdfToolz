@@ -35,6 +35,9 @@ class _PdfSignProgressPageState extends State<PdfSignProgressPage> {
   int _currentPage = 1; // 1-based index
   PdfThumbnailResult? _thumbnailResult;
   bool _isLoadingThumbnails = false;
+  bool _isUploadingThumbnails = false;
+  int _thumbnailSentBytes = 0;
+  int _thumbnailTotalBytes = 0;
 
   // Signature state
   Uint8List? _signatureBytes;
@@ -98,12 +101,31 @@ class _PdfSignProgressPageState extends State<PdfSignProgressPage> {
 
   Future<void> _loadThumbnails() async {
     if (_file == null) return;
-    setState(() => _isLoadingThumbnails = true);
-    final result = await PdfThumbnailService.fetchThumbnails(_file!);
+    setState(() {
+      _isLoadingThumbnails = true;
+      _isUploadingThumbnails = true;
+      _thumbnailSentBytes = 0;
+      _thumbnailTotalBytes = _file!.sizeBytes;
+    });
+    final result = await PdfThumbnailService.fetchThumbnails(
+      _file!,
+      onProgress: (sent, total) {
+        if (mounted) {
+          setState(() {
+            _thumbnailSentBytes = sent;
+            _thumbnailTotalBytes = total;
+            if (sent >= total) {
+              _isUploadingThumbnails = false;
+            }
+          });
+        }
+      },
+    );
     if (!mounted) return;
     setState(() {
       _thumbnailResult = result;
       _isLoadingThumbnails = false;
+      _isUploadingThumbnails = false;
       if (result.isSuccess && result.totalPages > 0) {
         _pageCount = result.totalPages;
       }
@@ -315,6 +337,17 @@ class _PdfSignProgressPageState extends State<PdfSignProgressPage> {
                   // Document Overview Card
                   _buildDocumentCard(theme, isDark),
                   const SizedBox(height: 24),
+
+                  if (_isLoadingThumbnails) ...[
+                    ToolUploadProgressIndicator(
+                      sentBytes: _thumbnailSentBytes,
+                      totalBytes: _thumbnailTotalBytes,
+                      isUploading: _isUploadingThumbnails,
+                      processingLabel: 'Generating visual page previews in Linux tmpfs RAM disk...',
+                      accentColor: const Color(0xFF0D9488),
+                    ),
+                    const SizedBox(height: 20),
+                  ],
 
                   if (_signedPdfBytes != null)
                     // Result Download Card with Ad #3

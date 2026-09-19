@@ -35,6 +35,9 @@ class _PdfNumberPagesProgressPageState extends State<PdfNumberPagesProgressPage>
   int _detectedPages = 1;
   PdfThumbnailResult? _thumbnailResult;
   bool _isLoadingThumbnails = false;
+  bool _isUploadingThumbnails = false;
+  int _thumbnailSentBytes = 0;
+  int _thumbnailTotalBytes = 0;
 
   // Numbering Configuration
   String _selectedPosition = 'bottom-center';
@@ -96,12 +99,31 @@ class _PdfNumberPagesProgressPageState extends State<PdfNumberPagesProgressPage>
   }
 
   Future<void> _loadThumbnails(SelectedPdfFile file) async {
-    setState(() => _isLoadingThumbnails = true);
-    final result = await PdfThumbnailService.fetchThumbnails(file);
+    setState(() {
+      _isLoadingThumbnails = true;
+      _isUploadingThumbnails = true;
+      _thumbnailSentBytes = 0;
+      _thumbnailTotalBytes = file.sizeBytes;
+    });
+    final result = await PdfThumbnailService.fetchThumbnails(
+      file,
+      onProgress: (sent, total) {
+        if (mounted) {
+          setState(() {
+            _thumbnailSentBytes = sent;
+            _thumbnailTotalBytes = total;
+            if (sent >= total) {
+              _isUploadingThumbnails = false;
+            }
+          });
+        }
+      },
+    );
     if (!mounted) return;
     setState(() {
       _thumbnailResult = result;
       _isLoadingThumbnails = false;
+      _isUploadingThumbnails = false;
       if (result.isSuccess && result.totalPages > 0) {
         _detectedPages = result.totalPages;
       }
@@ -328,6 +350,17 @@ class _PdfNumberPagesProgressPageState extends State<PdfNumberPagesProgressPage>
                             ],
                           ),
                         ),
+                      const SizedBox(height: 20),
+
+                      if (_isLoadingThumbnails) ...[
+                        ToolUploadProgressIndicator(
+                          sentBytes: _thumbnailSentBytes,
+                          totalBytes: _thumbnailTotalBytes,
+                          isUploading: _isUploadingThumbnails,
+                          processingLabel: 'Generating visual page previews in Linux tmpfs RAM disk...',
+                          accentColor: const Color(0xFF4F46E5),
+                        ),
+                      ],
 
                       // Two-column layout: Configurator & Live Preview
                       LayoutBuilder(

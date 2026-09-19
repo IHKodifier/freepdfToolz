@@ -75,12 +75,13 @@ class PdfThumbnailService {
     _cache.clear();
   }
 
-  /// Fetches real page thumbnails for the given PDF file
+  /// Fetches real page thumbnails for the given PDF file with real socket upload tracking
   static Future<PdfThumbnailResult> fetchThumbnails(
     SelectedPdfFile file, {
     int maxPages = 100,
     int dpi = 72,
     String? password,
+    Function(int sentBytes, int totalBytes)? onProgress,
   }) async {
     if (file.bytes == null || file.bytes!.isEmpty) {
       return PdfThumbnailResult(
@@ -97,28 +98,29 @@ class PdfThumbnailService {
     }
 
     try {
-      final uri = Uri.parse('${ApiService.baseUrl}/tools/render-thumbnails');
-      final request = http.MultipartRequest('POST', uri);
-
-      request.fields['max_pages'] = maxPages.toString();
-      request.fields['dpi'] = dpi.toString();
+      final fields = <String, String>{
+        'max_pages': maxPages.toString(),
+        'dpi': dpi.toString(),
+      };
       if (password != null && password.isNotEmpty) {
-        request.fields['password'] = password;
+        fields['password'] = password;
       }
 
-      request.files.add(
-        http.MultipartFile.fromBytes(
-          'file',
-          file.bytes!,
-          filename: file.name,
-        ),
+      final response = await ApiService.uploadToolFiles(
+        endpoint: '/tools/render-thumbnails',
+        fields: fields,
+        files: [
+          UploadFileItem(
+            field: 'file',
+            filename: file.name,
+            bytes: file.bytes!,
+          ),
+        ],
+        onProgress: onProgress,
       );
 
-      final streamedResponse = await request.send();
-      final response = await http.Response.fromStream(streamedResponse);
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body) as Map<String, dynamic>;
+      if (response.isSuccess) {
+        final data = jsonDecode(response.bodyString) as Map<String, dynamic>;
         final totalPages = data['total_pages'] as int? ?? 1;
         final rawPages = data['pages'] as List<dynamic>? ?? [];
 
@@ -164,7 +166,7 @@ class PdfThumbnailService {
       } else {
         String detail = 'Server responded with status ${response.statusCode}';
         try {
-          final errJson = jsonDecode(response.body) as Map<String, dynamic>;
+          final errJson = jsonDecode(response.bodyString) as Map<String, dynamic>;
           if (errJson.containsKey('detail')) {
             detail = errJson['detail'].toString();
           }

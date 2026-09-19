@@ -36,6 +36,9 @@ class _PdfCropProgressPageState extends State<PdfCropProgressPage> {
   int _detectedPages = 1;
   PdfThumbnailResult? _thumbnailResult;
   bool _isLoadingThumbnails = false;
+  bool _isUploadingThumbnails = false;
+  int _thumbnailSentBytes = 0;
+  int _thumbnailTotalBytes = 0;
 
   // Margin Configuration (in points)
   double _topMargin = 0.0;
@@ -92,12 +95,31 @@ class _PdfCropProgressPageState extends State<PdfCropProgressPage> {
   }
 
   Future<void> _loadThumbnails(SelectedPdfFile file) async {
-    setState(() => _isLoadingThumbnails = true);
-    final result = await PdfThumbnailService.fetchThumbnails(file);
+    setState(() {
+      _isLoadingThumbnails = true;
+      _isUploadingThumbnails = true;
+      _thumbnailSentBytes = 0;
+      _thumbnailTotalBytes = file.sizeBytes;
+    });
+    final result = await PdfThumbnailService.fetchThumbnails(
+      file,
+      onProgress: (sent, total) {
+        if (mounted) {
+          setState(() {
+            _thumbnailSentBytes = sent;
+            _thumbnailTotalBytes = total;
+            if (sent >= total) {
+              _isUploadingThumbnails = false;
+            }
+          });
+        }
+      },
+    );
     if (!mounted) return;
     setState(() {
       _thumbnailResult = result;
       _isLoadingThumbnails = false;
+      _isUploadingThumbnails = false;
       if (result.isSuccess && result.totalPages > 0) {
         _detectedPages = result.totalPages;
       }
@@ -349,6 +371,17 @@ class _PdfCropProgressPageState extends State<PdfCropProgressPage> {
         // Document Overview Card
         _buildDocumentHeader(context, isDark),
         const SizedBox(height: 24),
+
+        if (_isLoadingThumbnails) ...[
+          ToolUploadProgressIndicator(
+            sentBytes: _thumbnailSentBytes,
+            totalBytes: _thumbnailTotalBytes,
+            isUploading: _isUploadingThumbnails,
+            processingLabel: 'Generating visual page previews in Linux tmpfs RAM disk...',
+            accentColor: const Color(0xFF0284C7),
+          ),
+          const SizedBox(height: 20),
+        ],
 
         // 2-Column Responsive Workspace: Controls (Left) & Live Preview (Right)
         LayoutBuilder(

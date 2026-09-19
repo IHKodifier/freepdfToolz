@@ -35,6 +35,9 @@ class _PdfRedactProgressPageState extends State<PdfRedactProgressPage> {
   int _detectedPages = 1;
   PdfThumbnailResult? _thumbnailResult;
   bool _isLoadingThumbnails = false;
+  bool _isUploadingThumbnails = false;
+  int _thumbnailSentBytes = 0;
+  int _thumbnailTotalBytes = 0;
   double _previewZoom = 1.0;
 
   final TextEditingController _searchController = TextEditingController();
@@ -106,12 +109,31 @@ class _PdfRedactProgressPageState extends State<PdfRedactProgressPage> {
   }
 
   Future<void> _loadThumbnails(SelectedPdfFile file) async {
-    setState(() => _isLoadingThumbnails = true);
-    final result = await PdfThumbnailService.fetchThumbnails(file);
+    setState(() {
+      _isLoadingThumbnails = true;
+      _isUploadingThumbnails = true;
+      _thumbnailSentBytes = 0;
+      _thumbnailTotalBytes = file.sizeBytes;
+    });
+    final result = await PdfThumbnailService.fetchThumbnails(
+      file,
+      onProgress: (sent, total) {
+        if (mounted) {
+          setState(() {
+            _thumbnailSentBytes = sent;
+            _thumbnailTotalBytes = total;
+            if (sent >= total) {
+              _isUploadingThumbnails = false;
+            }
+          });
+        }
+      },
+    );
     if (!mounted) return;
     setState(() {
       _thumbnailResult = result;
       _isLoadingThumbnails = false;
+      _isUploadingThumbnails = false;
       if (result.isSuccess && result.totalPages > 0) {
         _detectedPages = result.totalPages;
       }
@@ -278,8 +300,20 @@ class _PdfRedactProgressPageState extends State<PdfRedactProgressPage> {
   }
 
   Widget _buildWorkspaceLayout(bool isDark) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
+    return Column(
+      children: [
+        if (_isLoadingThumbnails) ...[
+          ToolUploadProgressIndicator(
+            sentBytes: _thumbnailSentBytes,
+            totalBytes: _thumbnailTotalBytes,
+            isUploading: _isUploadingThumbnails,
+            processingLabel: 'Generating visual page previews in Linux tmpfs RAM disk...',
+            accentColor: _redactColor,
+          ),
+          const SizedBox(height: 20),
+        ],
+        LayoutBuilder(
+          builder: (context, constraints) {
         final isNarrow = constraints.maxWidth < 850;
 
         if (isNarrow) {
@@ -329,7 +363,9 @@ class _PdfRedactProgressPageState extends State<PdfRedactProgressPage> {
           ],
         );
       },
-    );
+    ),
+  ],
+);
   }
 
   Widget _buildOverviewCard(bool isDark) {
