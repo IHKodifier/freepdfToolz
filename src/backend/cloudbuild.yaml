@@ -1,0 +1,15 @@
+steps:
+  # Pull cached image layers from GCR in Google internal network
+  - name: 'gcr.io/cloud-builders/docker'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        docker pull gcr.io/$PROJECT_ID/freepdftoolz-backend:latest || true
+        docker build --cache-from gcr.io/$PROJECT_ID/freepdftoolz-backend:latest -t gcr.io/$PROJECT_ID/freepdftoolz-backend:latest .
+
+images:
+  - 'gcr.io/$PROJECT_ID/freepdftoolz-backend:latest'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
