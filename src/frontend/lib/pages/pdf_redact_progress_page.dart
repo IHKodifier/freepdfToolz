@@ -593,100 +593,104 @@ class _PdfRedactProgressPageState extends State<PdfRedactProgressPage> {
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
               const SizedBox(width: 8),
-              Wrap(
-                spacing: 8,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  // Universal Zoom Controls
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF0D1117) : const Color(0xFFF1F5F9),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: isDark ? const Color(0xFF30363D) : const Color(0xFFE2E8F0),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          key: const Key('redact_zoom_out_btn'),
-                          icon: const Icon(Icons.remove_rounded, size: 16),
-                          tooltip: 'Zoom Out',
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(minWidth: 26, minHeight: 26),
-                          onPressed: _previewZoom > 0.8
-                              ? () => setState(() => _previewZoom = (_previewZoom - 0.25).clamp(0.8, 2.5))
-                              : null,
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 5),
-                          child: Text(
-                            '${(_previewZoom * 100).toInt()}%',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              color: isDark ? Colors.white : const Color(0xFF1E293B),
-                            ),
-                          ),
-                        ),
-                        IconButton(
-                          key: const Key('redact_zoom_in_btn'),
-                          icon: const Icon(Icons.add_rounded, size: 16),
-                          tooltip: 'Zoom In',
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(minWidth: 26, minHeight: 26),
-                          onPressed: _previewZoom < 2.5
-                              ? () => setState(() => _previewZoom = (_previewZoom + 0.25).clamp(0.8, 2.5))
-                              : null,
-                        ),
-                        if (_previewZoom != 1.0)
-                          IconButton(
-                            icon: const Icon(Icons.restart_alt_rounded, size: 16),
-                            tooltip: 'Reset Zoom (100%)',
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(minWidth: 26, minHeight: 26),
-                            onPressed: () => setState(() => _previewZoom = 1.0),
-                          ),
-                      ],
+              Flexible(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: _redactColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    hasQuery ? 'TARGET: $query' : 'READY',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: _redactColor,
                     ),
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: _redactColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      hasQuery ? 'TARGET: $query' : 'READY',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        color: _redactColor,
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 4),
-          Text(
-            'Visual simulation of permanent black box glyph redaction. Zoom in to inspect at full size.',
-            style: TextStyle(
-              fontSize: 12.5,
-              color: isDark ? const Color(0xFF8B949E) : const Color(0xFF64748B),
-            ),
+          const SizedBox(height: 6),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  'Visual simulation of permanent black box glyph redaction.',
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    color: isDark ? const Color(0xFF8B949E) : const Color(0xFF64748B),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              // Universal Zoom Controls
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF0D1117) : const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: isDark ? const Color(0xFF30363D) : const Color(0xFFE2E8F0),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      key: const Key('redact_zoom_out_btn'),
+                      icon: const Icon(Icons.remove_rounded, size: 16),
+                      tooltip: 'Zoom Out',
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(minWidth: 26, minHeight: 26),
+                      onPressed: _previewZoom > 0.8
+                          ? () => setState(() => _previewZoom = (_previewZoom - 0.25).clamp(0.8, 2.5))
+                          : null,
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 5),
+                      child: Text(
+                        '${(_previewZoom * 100).toInt()}%',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: isDark ? Colors.white : const Color(0xFF1E293B),
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      key: const Key('redact_zoom_in_btn'),
+                      icon: const Icon(Icons.add_rounded, size: 16),
+                      tooltip: 'Zoom In',
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(minWidth: 26, minHeight: 26),
+                      onPressed: _previewZoom < 2.5
+                          ? () => setState(() => _previewZoom = (_previewZoom + 0.25).clamp(0.8, 2.5))
+                          : null,
+                    ),
+                    if (_previewZoom != 1.0)
+                      IconButton(
+                        icon: const Icon(Icons.restart_alt_rounded, size: 16),
+                        tooltip: 'Reset Zoom (100%)',
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(minWidth: 26, minHeight: 26),
+                        onPressed: () => setState(() => _previewZoom = 1.0),
+                      ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 18),
 
           // Document Canvas (Real Thumbnail Preview + Redaction Overlay)
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Center(
+          Center(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 150),
                 width: 320 * _previewZoom,
