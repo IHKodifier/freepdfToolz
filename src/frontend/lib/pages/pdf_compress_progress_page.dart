@@ -353,7 +353,7 @@ class _PdfCompressProgressPageState extends State<PdfCompressProgressPage> {
                   ],
 
                   // Configurator & Presets (Visible before compression completes)
-                  if (_resultBytes == null) ...[
+                  if (_resultBytes == null && !_isUploadingThumbnail) ...[
                     Text(
                       'Select Compression Level',
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(

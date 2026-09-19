@@ -596,8 +596,9 @@ class _PdfSplitProgressPageState extends State<PdfSplitProgressPage> {
                   ),
                   const SizedBox(height: 24),
                 ] else ...[
-                  // Mode Selector Card
-                  Container(
+                  if (!_isUploadingThumbnail) ...[
+                    // Mode Selector Card
+                    Container(
                     padding: const EdgeInsets.all(22),
                     decoration: BoxDecoration(
                       color: isDark ? const Color(0xFF161B22) : Colors.white,
@@ -933,6 +934,7 @@ class _PdfSplitProgressPageState extends State<PdfSplitProgressPage> {
                     ),
                   ),
                 ],
+              ],
               ],
             ),
           ),

@@ -362,41 +362,43 @@ class _PdfNumberPagesProgressPageState extends State<PdfNumberPagesProgressPage>
                         ),
                       ],
 
-                      // Two-column layout: Configurator & Live Preview
-                      LayoutBuilder(
-                        builder: (context, constraints) {
-                          final isWide = constraints.maxWidth >= 768;
-                          if (isWide) {
-                            return Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Expanded(
-                                  flex: 6,
-                                  child: _buildConfiguratorCard(isDark),
-                                ),
-                                const SizedBox(width: 24),
-                                Expanded(
-                                  flex: 4,
-                                  child: _buildLivePreviewCard(isDark),
-                                ),
-                              ],
-                            );
-                          } else {
-                            return Column(
-                              children: [
-                                _buildConfiguratorCard(isDark),
-                                const SizedBox(height: 24),
-                                _buildLivePreviewCard(isDark),
-                              ],
-                            );
-                          }
-                        },
-                      ),
+                      if (!_isUploadingThumbnails) ...[
+                        // Two-column layout: Configurator & Live Preview
+                        LayoutBuilder(
+                          builder: (context, constraints) {
+                            final isWide = constraints.maxWidth >= 768;
+                            if (isWide) {
+                              return Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(
+                                    flex: 6,
+                                    child: _buildConfiguratorCard(isDark),
+                                  ),
+                                  const SizedBox(width: 24),
+                                  Expanded(
+                                    flex: 4,
+                                    child: _buildLivePreviewCard(isDark),
+                                  ),
+                                ],
+                              );
+                            } else {
+                              return Column(
+                                children: [
+                                  _buildConfiguratorCard(isDark),
+                                  const SizedBox(height: 24),
+                                  _buildLivePreviewCard(isDark),
+                                ],
+                              );
+                            }
+                          },
+                        ),
 
-                      const SizedBox(height: 28),
+                        const SizedBox(height: 28),
 
-                      // Apply Button
-                      _buildActionButtons(isDark),
+                        // Apply Button
+                        _buildActionButtons(isDark),
+                      ],
                     ],
                   ],
                 ),

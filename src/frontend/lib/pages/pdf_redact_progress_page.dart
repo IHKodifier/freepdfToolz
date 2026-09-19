@@ -312,7 +312,8 @@ class _PdfRedactProgressPageState extends State<PdfRedactProgressPage> {
           ),
           const SizedBox(height: 20),
         ],
-        LayoutBuilder(
+        if (!_isUploadingThumbnails)
+          LayoutBuilder(
           builder: (context, constraints) {
         final isNarrow = constraints.maxWidth < 850;
 

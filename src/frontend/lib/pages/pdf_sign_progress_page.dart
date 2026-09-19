@@ -352,7 +352,7 @@ class _PdfSignProgressPageState extends State<PdfSignProgressPage> {
                   if (_signedPdfBytes != null)
                     // Result Download Card with Ad #3
                     _buildResultCard(theme, isDark)
-                  else
+                  else if (!_isUploadingThumbnails)
                     // Interactive Signing & Placement Panel
                     _buildWorkspacePanel(theme, isDark),
                 ],

@@ -383,8 +383,9 @@ class _PdfCropProgressPageState extends State<PdfCropProgressPage> {
           const SizedBox(height: 20),
         ],
 
-        // 2-Column Responsive Workspace: Controls (Left) & Live Preview (Right)
-        LayoutBuilder(
+        if (!_isUploadingThumbnails) ...[
+          // 2-Column Responsive Workspace: Controls (Left) & Live Preview (Right)
+          LayoutBuilder(
           builder: (context, constraints) {
             final isWide = constraints.maxWidth >= 768;
             if (isWide) {
@@ -468,6 +469,7 @@ class _PdfCropProgressPageState extends State<PdfCropProgressPage> {
           ),
         ),
       ),
+        ],
       ],
     );
   }

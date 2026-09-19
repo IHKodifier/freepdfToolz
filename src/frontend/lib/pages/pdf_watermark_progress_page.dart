@@ -385,7 +385,7 @@ class _PdfWatermarkProgressPageState extends State<PdfWatermarkProgressPage> {
                     // If completed, show result view; otherwise show workspace configurator
                     if (_resultBytes != null)
                       _buildResultCard(isDark)
-                    else
+                    else if (!_isUploadingThumbnails)
                       _buildConfiguratorLayout(isDark),
                   ],
                 ),

@@ -632,9 +632,19 @@ class _PdfExtractPagesProgressPageState extends State<PdfExtractPagesProgressPag
                       ),
                       const SizedBox(height: 24),
                     ] else ...[
-                      // Output Mode Selector Card
-                      Container(
-                        padding: const EdgeInsets.all(18),
+                      if (_isLoadingThumbnails) ...[
+                        ToolUploadProgressIndicator(
+                          sentBytes: _thumbnailSentBytes,
+                          totalBytes: _thumbnailTotalBytes,
+                          isUploading: _isUploadingThumbnails,
+                          processingLabel: 'Generating page thumbnails...',
+                          accentColor: const Color(0xFF0969DA),
+                        ),
+                      ],
+                      if (!_isUploadingThumbnails) ...[
+                        // Output Mode Selector Card
+                        Container(
+                          padding: const EdgeInsets.all(18),
                         decoration: BoxDecoration(
                           color: isDark ? const Color(0xFF161B22) : Colors.white,
                           borderRadius: BorderRadius.circular(14),
@@ -864,16 +874,6 @@ class _PdfExtractPagesProgressPageState extends State<PdfExtractPagesProgressPag
                       ),
                       const SizedBox(height: 24),
 
-                      if (_isLoadingThumbnails) ...[
-                        ToolUploadProgressIndicator(
-                          sentBytes: _thumbnailSentBytes,
-                          totalBytes: _thumbnailTotalBytes,
-                          isUploading: _isUploadingThumbnails,
-                          processingLabel: 'Generating page thumbnails...',
-                          accentColor: const Color(0xFF0969DA),
-                        ),
-                      ],
-
                       // Visual Page Preview Grid
                       GridView.builder(
                         physics: const NeverScrollableScrollPhysics(),
@@ -971,6 +971,7 @@ class _PdfExtractPagesProgressPageState extends State<PdfExtractPagesProgressPag
                       ),
                       const SizedBox(height: 36),
                     ],
+                  ],
                   ],
                 ),
               ),

@@ -433,18 +433,20 @@ class _PdfMergeProgressPageState extends State<PdfMergeProgressPage> {
                             ),
                             const SizedBox(height: 20),
                           ],
-                          _buildFilesManagerCard(theme, isDark),
-                          const SizedBox(height: 24),
-                          if (_isMerging) ...[
-                            ToolUploadProgressIndicator(
-                              sentBytes: _uploadSentBytes,
-                              totalBytes: _uploadTotalBytes,
-                              isUploading: _isUploading,
-                              processingLabel: 'Merging ${_files.length} PDFs...',
-                              accentColor: const Color(0xFFEF4444),
-                            ),
+                          if (!_isUploadingThumbnails) ...[
+                            _buildFilesManagerCard(theme, isDark),
+                            const SizedBox(height: 24),
+                            if (_isMerging) ...[
+                              ToolUploadProgressIndicator(
+                                sentBytes: _uploadSentBytes,
+                                totalBytes: _uploadTotalBytes,
+                                isUploading: _isUploading,
+                                processingLabel: 'Merging ${_files.length} PDFs...',
+                                accentColor: const Color(0xFFEF4444),
+                              ),
+                            ],
+                            _buildActionButton(theme),
                           ],
-                          _buildActionButton(theme),
                         ],
 
                         const SizedBox(height: 48),

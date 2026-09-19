@@ -514,16 +514,26 @@ class _PdfDeletePagesProgressPageState extends State<PdfDeletePagesProgressPage>
                       ),
                       const SizedBox(height: 24),
                     ] else ...[
-                      // Quick Action Toolbar & Status Bar
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF161B22) : Colors.white,
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                            color: isDark ? const Color(0xFF30363D) : const Color(0xFFE2E8F0),
-                          ),
+                      if (_isLoadingThumbnails) ...[
+                        ToolUploadProgressIndicator(
+                          sentBytes: _thumbnailSentBytes,
+                          totalBytes: _thumbnailTotalBytes,
+                          isUploading: _isUploadingThumbnails,
+                          processingLabel: 'Generating page thumbnails...',
+                          accentColor: const Color(0xFFCF222E),
                         ),
+                      ],
+                      if (!_isUploadingThumbnails) ...[
+                        // Quick Action Toolbar & Status Bar
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: isDark ? const Color(0xFF161B22) : Colors.white,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: isDark ? const Color(0xFF30363D) : const Color(0xFFE2E8F0),
+                            ),
+                          ),
                         child: Wrap(
                           spacing: 12,
                           runSpacing: 8,
@@ -647,16 +657,6 @@ class _PdfDeletePagesProgressPageState extends State<PdfDeletePagesProgressPage>
                         ),
                       ),
                       const SizedBox(height: 24),
-
-                      if (_isLoadingThumbnails) ...[
-                        ToolUploadProgressIndicator(
-                          sentBytes: _thumbnailSentBytes,
-                          totalBytes: _thumbnailTotalBytes,
-                          isUploading: _isUploadingThumbnails,
-                          processingLabel: 'Generating page thumbnails...',
-                          accentColor: const Color(0xFFCF222E),
-                        ),
-                      ],
                       if (isAllSelected) ...[
                         Container(
                           padding: const EdgeInsets.all(14),
@@ -782,6 +782,7 @@ class _PdfDeletePagesProgressPageState extends State<PdfDeletePagesProgressPage>
                       ),
                       const SizedBox(height: 36),
                     ],
+                  ],
                   ],
                 ),
               ),
