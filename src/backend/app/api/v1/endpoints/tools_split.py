@@ -11,6 +11,7 @@ from fastapi import APIRouter, BackgroundTasks, File, Form, HTTPException, Uploa
 from fastapi.responses import FileResponse
 
 from app.services.pdf_split_service import parse_page_ranges, split_pdf
+from app.services.file_staging_service import FileStagingService
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -45,13 +46,14 @@ def cleanup_directory(path: str) -> None:
 @router.post("/split")
 async def split_pdf_endpoint(
     background_tasks: BackgroundTasks,
-    file: UploadFile = File(...),
+    file: Optional[UploadFile] = File(None),
+    session_file_id: Optional[str] = Form(None),
     mode: str = Form("ranges"),
     ranges: Optional[str] = Form(None),
     split_every: Optional[int] = Form(None),
 ):
     """
-    Splits an uploaded PDF document into multiple documents or extracts page ranges.
+    Splits an uploaded or staged PDF document into multiple documents or extracts page ranges.
     Executes locally in temporary storage with PyMuPDF.
 
     Modes:
@@ -59,13 +61,6 @@ async def split_pdf_endpoint(
     - 'fixed': Split every N pages (split_every)
     - 'all': Extract every single page as a standalone PDF
     """
-    filename = (file.filename or "document.pdf").strip()
-    if not filename.lower().endswith(".pdf"):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Only PDF files are supported.",
-        )
-
     max_bytes = get_max_file_bytes()
 
     # Create temporary scratch directory
@@ -73,18 +68,43 @@ async def split_pdf_endpoint(
     background_tasks.add_task(cleanup_directory, str(temp_dir))
 
     temp_input_path = temp_dir / "input.pdf"
-    file_size = 0
+    filename = "document.pdf"
+    file_bytes: Optional[bytes] = None
+
+    if session_file_id:
+        staged = FileStagingService.get_staged_file(session_file_id)
+        if staged:
+            file_bytes, filename = staged
+        elif file is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Staged session file expired or not found. Please upload again.",
+            )
+
+    if file_bytes is None and file is not None:
+        filename = (file.filename or "document.pdf").strip()
+        if not filename.lower().endswith(".pdf"):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Only PDF files are supported.",
+            )
+        file_bytes = await file.read()
+
+    if file_bytes is None or len(file_bytes) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No PDF file or valid session_file_id provided.",
+        )
+
+    if len(file_bytes) > max_bytes:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"File exceeds maximum allowed size of {max_bytes // (1024 * 1024)}MB.",
+        )
 
     try:
         with open(temp_input_path, "wb") as f:
-            while chunk := await file.read(1024 * 1024):  # 1MB chunks
-                file_size += len(chunk)
-                if file_size > max_bytes:
-                    raise HTTPException(
-                        status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-                        detail=f"File exceeds maximum allowed size of {max_bytes // (1024 * 1024)}MB.",
-                    )
-                f.write(chunk)
+            f.write(file_bytes)
 
         # Inspect PDF
         try:

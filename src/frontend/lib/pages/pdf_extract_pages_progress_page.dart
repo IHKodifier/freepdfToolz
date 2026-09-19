@@ -115,6 +115,13 @@ class _PdfExtractPagesProgressPageState extends State<PdfExtractPagesProgressPag
           });
         }
       },
+      onBatchLoaded: (allPages, totalPages) {
+        if (mounted) {
+          setState(() {
+            _detectedPages = totalPages;
+          });
+        }
+      },
     );
     if (!mounted) return;
     setState(() {
@@ -281,7 +288,10 @@ class _PdfExtractPagesProgressPageState extends State<PdfExtractPagesProgressPag
     if (_file == null || _file!.bytes == null) return;
     if (_selectedPageIndices.isEmpty) return;
 
-    final totalBytes = _file!.bytes!.length;
+    final sessionFileId = _thumbnailResult?.sessionFileId;
+    final bool useStagedFile = sessionFileId != null && sessionFileId.isNotEmpty;
+    final totalBytes = useStagedFile ? 1 : _file!.bytes!.length;
+
     setState(() {
       _isSaving = true;
       _isUploading = true;
@@ -292,19 +302,27 @@ class _PdfExtractPagesProgressPageState extends State<PdfExtractPagesProgressPag
 
     try {
       final pagesList = _selectedPageIndices.map((i) => i + 1).toList()..sort();
-      final response = await ApiService.uploadToolFiles(
-        endpoint: '/tools/extract-pages',
-        files: [
+      final fields = <String, String>{
+        'pages': pagesList.join(', '),
+        'output_mode': _outputMode,
+      };
+      final List<UploadFileItem> files = [];
+      if (useStagedFile) {
+        fields['session_file_id'] = sessionFileId;
+      } else {
+        files.add(
           UploadFileItem(
             fieldName: 'file',
             filename: _file!.name,
             bytes: _file!.bytes!,
           ),
-        ],
-        fields: {
-          'pages': pagesList.join(', '),
-          'output_mode': _outputMode,
-        },
+        );
+      }
+
+      final response = await ApiService.uploadToolFiles(
+        endpoint: '/tools/extract-pages',
+        files: files,
+        fields: fields,
         onProgress: (sent, total) {
           if (mounted) {
             setState(() {

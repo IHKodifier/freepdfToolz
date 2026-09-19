@@ -158,3 +158,25 @@ def test_delete_pages_endpoint_rejects_non_pdf():
     response = client.post("/api/v1/tools/delete-pages", files=files, data=data)
     assert response.status_code == 400
     assert "pdf" in response.json().get("detail", "").lower()
+
+
+def test_delete_pages_endpoint_with_session_file_id():
+    """AC: Deletion succeeds using session_file_id without re-uploading file bytes."""
+    from app.services.file_staging_service import FileStagingService
+
+    pdf = create_mock_pdf_bytes(["A", "B", "C"])
+    session_id = FileStagingService.store_staged_file("sample.pdf", pdf)
+
+    # Post with session_file_id and NO file upload
+    response = client.post(
+        "/api/v1/tools/delete-pages",
+        data={"session_file_id": session_id, "pages": json.dumps([1])},
+    )
+    assert response.status_code == 200
+
+    result_doc = fitz.open(stream=response.content, filetype="pdf")
+    assert result_doc.page_count == 2
+    assert "A" in result_doc[0].get_text()
+    assert "C" in result_doc[1].get_text()
+    result_doc.close()
+

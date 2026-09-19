@@ -4,11 +4,13 @@ import os
 import shutil
 import tempfile
 from pathlib import Path
+from typing import Optional
 
 from fastapi import APIRouter, BackgroundTasks, File, Form, HTTPException, UploadFile, status
 from fastapi.responses import FileResponse
 
 from app.services.pdf_compress_service import compress_pdf, VALID_COMPRESSION_LEVELS
+from app.services.file_staging_service import FileStagingService
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -43,24 +45,19 @@ def cleanup_directory(path: str) -> None:
 @router.post("/compress")
 async def compress_pdf_endpoint(
     background_tasks: BackgroundTasks,
-    file: UploadFile = File(...),
+    file: Optional[UploadFile] = File(None),
+    session_file_id: Optional[str] = Form(None),
     level: str = Form("recommended"),
 ):
     """
-    Compresses an uploaded PDF file with stream optimization, font/object deduplication,
+    Compresses an uploaded or staged PDF file with stream optimization, font/object deduplication,
     and adaptive image downsampling according to the specified level.
 
     Parameters:
-    - file: Uploaded PDF file
+    - file: Uploaded PDF file (optional if session_file_id provided)
+    - session_file_id: Session token of previously staged file in RAM
     - level: Compression level preset ('recommended', 'extreme', 'low')
     """
-    filename = (file.filename or "document.pdf").strip()
-    if not filename.lower().endswith(".pdf"):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Only PDF files are supported.",
-        )
-
     norm_level = (level or "recommended").strip().lower()
     if norm_level not in VALID_COMPRESSION_LEVELS:
         raise HTTPException(
@@ -75,26 +72,46 @@ async def compress_pdf_endpoint(
     background_tasks.add_task(cleanup_directory, str(temp_dir))
 
     temp_input_path = temp_dir / "input.pdf"
+    filename = "document.pdf"
+    file_bytes: Optional[bytes] = None
+
+    if session_file_id:
+        staged = FileStagingService.get_staged_file(session_file_id)
+        if staged:
+            file_bytes, filename = staged
+        elif file is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Staged session file expired or not found. Please upload again.",
+            )
+
+    if file_bytes is None and file is not None:
+        filename = (file.filename or "document.pdf").strip()
+        if not filename.lower().endswith(".pdf"):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Only PDF files are supported.",
+            )
+        file_bytes = await file.read()
+
+    if file_bytes is None or len(file_bytes) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No PDF file or valid session_file_id provided.",
+        )
+
+    if len(file_bytes) > max_bytes:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"File exceeds maximum allowed size of {max_bytes // (1024 * 1024)}MB.",
+        )
+
     clean_stem = Path(filename).stem
     temp_output_path = temp_dir / f"{clean_stem}_compressed.pdf"
-    file_size = 0
 
     try:
         with open(temp_input_path, "wb") as f:
-            while chunk := await file.read(1024 * 1024):  # 1MB chunk
-                file_size += len(chunk)
-                if file_size > max_bytes:
-                    raise HTTPException(
-                        status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-                        detail=f"File exceeds maximum allowed size of {max_bytes // (1024 * 1024)}MB.",
-                    )
-                f.write(chunk)
-
-        if file_size == 0:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Uploaded file is empty.",
-            )
+            f.write(file_bytes)
 
         # Execute compression service
         metrics = compress_pdf(

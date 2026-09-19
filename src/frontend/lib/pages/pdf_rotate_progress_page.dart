@@ -105,6 +105,16 @@ class _PdfRotateProgressPageState extends State<PdfRotateProgressPage> {
           });
         }
       },
+      onBatchLoaded: (allPages, totalPages) {
+        if (mounted) {
+          setState(() {
+            _detectedPages = totalPages;
+            for (int i = 0; i < _detectedPages; i++) {
+              _pageRotations.putIfAbsent(i, () => 0);
+            }
+          });
+        }
+      },
     );
     if (!mounted) return;
     setState(() {
@@ -167,13 +177,15 @@ class _PdfRotateProgressPageState extends State<PdfRotateProgressPage> {
   }
 
   Future<void> _executeRotate() async {
-    if (_file == null || _file!.bytes == null) return;
+    final sessionFileId = _thumbnailResult?.sessionFileId;
+    final bool useStagedFile = sessionFileId != null && sessionFileId.isNotEmpty;
+    final totalBytes = useStagedFile ? 1 : _file!.bytes!.length;
 
     setState(() {
       _isSaving = true;
       _isUploading = true;
       _uploadSentBytes = 0;
-      _uploadTotalBytes = _file!.bytes!.length;
+      _uploadTotalBytes = totalBytes;
       _errorMessage = null;
     });
 
@@ -186,18 +198,26 @@ class _PdfRotateProgressPageState extends State<PdfRotateProgressPage> {
         }
       });
 
-      final uploadRes = await ApiService.uploadToolFiles(
-        endpoint: '/tools/rotate',
-        fields: {
-          'rotations': jsonEncode(rotationsPayload),
-        },
-        files: [
+      final fields = <String, String>{
+        'rotations': jsonEncode(rotationsPayload),
+      };
+      final List<UploadFileItem> files = [];
+      if (useStagedFile) {
+        fields['session_file_id'] = sessionFileId;
+      } else {
+        files.add(
           UploadFileItem(
             field: 'file',
             filename: _file!.name,
             bytes: _file!.bytes!,
           ),
-        ],
+        );
+      }
+
+      final uploadRes = await ApiService.uploadToolFiles(
+        endpoint: '/tools/rotate',
+        fields: fields,
+        files: files,
         onProgress: (sent, total) {
           if (mounted) {
             setState(() {

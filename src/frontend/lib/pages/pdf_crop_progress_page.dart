@@ -114,6 +114,13 @@ class _PdfCropProgressPageState extends State<PdfCropProgressPage> {
           });
         }
       },
+      onBatchLoaded: (allPages, totalPages) {
+        if (mounted) {
+          setState(() {
+            _detectedPages = totalPages;
+          });
+        }
+      },
     );
     if (!mounted) return;
     setState(() {
@@ -155,7 +162,10 @@ class _PdfCropProgressPageState extends State<PdfCropProgressPage> {
   Future<void> _applyCrop() async {
     if (_file == null || _file!.bytes == null) return;
 
-    final totalBytes = _file!.bytes!.length;
+    final sessionFileId = _thumbnailResult?.sessionFileId;
+    final bool useStagedFile = sessionFileId != null && sessionFileId.isNotEmpty;
+    final totalBytes = useStagedFile ? 1 : _file!.bytes!.length;
+
     setState(() {
       _isProcessing = true;
       _isUploading = true;
@@ -165,23 +175,31 @@ class _PdfCropProgressPageState extends State<PdfCropProgressPage> {
     });
 
     try {
-      final response = await ApiService.uploadToolFiles(
-        endpoint: '/tools/crop',
-        files: [
+      final fields = <String, String>{
+        'left': _leftMargin.toString(),
+        'top': _topMargin.toString(),
+        'right': _rightMargin.toString(),
+        'bottom': _bottomMargin.toString(),
+        'apply_to_all': _applyToAll.toString(),
+        'target_page': (_targetPage - 1).toString(),
+      };
+      final List<UploadFileItem> files = [];
+      if (useStagedFile) {
+        fields['session_file_id'] = sessionFileId;
+      } else {
+        files.add(
           UploadFileItem(
             fieldName: 'file',
             filename: _file!.name,
             bytes: _file!.bytes!,
           ),
-        ],
-        fields: {
-          'left': _leftMargin.toString(),
-          'top': _topMargin.toString(),
-          'right': _rightMargin.toString(),
-          'bottom': _bottomMargin.toString(),
-          'apply_to_all': _applyToAll.toString(),
-          'target_page': (_targetPage - 1).toString(),
-        },
+        );
+      }
+
+      final response = await ApiService.uploadToolFiles(
+        endpoint: '/tools/crop',
+        files: files,
+        fields: fields,
         onProgress: (sent, total) {
           if (mounted) {
             setState(() {

@@ -10,6 +10,7 @@ from fastapi import APIRouter, BackgroundTasks, File, Form, HTTPException, Uploa
 from fastapi.responses import FileResponse
 
 from app.services.pdf_redact_service import redact_pdf
+from app.services.file_staging_service import FileStagingService
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -44,28 +45,23 @@ def cleanup_directory(path: str) -> None:
 @router.post("/redact")
 async def redact_pdf_endpoint(
     background_tasks: BackgroundTasks,
-    file: UploadFile = File(...),
+    file: Optional[UploadFile] = File(None),
+    session_file_id: Optional[str] = Form(None),
     search_phrase: Optional[str] = Form(None),
     rects_json: Optional[str] = Form(None),
     case_sensitive: bool = Form(False),
 ):
     """
-    Applies permanent cryptographic redaction to an uploaded PDF document.
+    Applies permanent cryptographic redaction to an uploaded or staged PDF document.
     Purges text glyphs and raster pixel streams using PyMuPDF.
 
     Parameters:
-    - file: Uploaded PDF document
+    - file: Uploaded PDF document (optional if session_file_id provided)
+    - session_file_id: Session token of previously staged file in RAM
     - search_phrase: Keyword or text phrase to redact across document
     - rects_json: Optional JSON array of redaction rects [{'page_index': 0, 'x0': 0, ...}]
     - case_sensitive: Whether keyword matching is case-sensitive
     """
-    filename = (file.filename or "document.pdf").strip()
-    if not filename.lower().endswith(".pdf"):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Only PDF files are supported.",
-        )
-
     clean_phrase = (search_phrase or "").strip()
     parsed_rects = None
 
@@ -95,20 +91,46 @@ async def redact_pdf_endpoint(
     background_tasks.add_task(cleanup_directory, str(temp_dir))
 
     temp_input_path = temp_dir / "input.pdf"
+    filename = "document.pdf"
+    file_bytes: Optional[bytes] = None
+
+    if session_file_id:
+        staged = FileStagingService.get_staged_file(session_file_id)
+        if staged:
+            file_bytes, filename = staged
+        elif file is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Staged session file expired or not found. Please upload again.",
+            )
+
+    if file_bytes is None and file is not None:
+        filename = (file.filename or "document.pdf").strip()
+        if not filename.lower().endswith(".pdf"):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Only PDF files are supported.",
+            )
+        file_bytes = await file.read()
+
+    if file_bytes is None or len(file_bytes) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No PDF file or valid session_file_id provided.",
+        )
+
+    if len(file_bytes) > max_bytes:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"File exceeds maximum allowed size of {max_bytes // (1024 * 1024)}MB.",
+        )
+
     raw_stem = Path(filename).stem
     temp_output_path = temp_dir / f"{raw_stem}_redacted.pdf"
-    file_size = 0
 
     try:
         with open(temp_input_path, "wb") as f:
-            while chunk := await file.read(1024 * 1024):  # 1MB chunk
-                file_size += len(chunk)
-                if file_size > max_bytes:
-                    raise HTTPException(
-                        status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-                        detail=f"File exceeds maximum allowed size of {max_bytes // (1024 * 1024)}MB.",
-                    )
-                f.write(chunk)
+            f.write(file_bytes)
 
         # Execute PDF Redaction
         try:

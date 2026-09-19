@@ -125,6 +125,13 @@ class _PdfWatermarkProgressPageState extends State<PdfWatermarkProgressPage> {
           });
         }
       },
+      onBatchLoaded: (allPages, totalPages) {
+        if (mounted) {
+          setState(() {
+            _detectedPages = totalPages;
+          });
+        }
+      },
     );
     if (!mounted) return;
     setState(() {
@@ -192,14 +199,11 @@ class _PdfWatermarkProgressPageState extends State<PdfWatermarkProgressPage> {
       return;
     }
 
-    final files = <UploadFileItem>[
-      UploadFileItem(
-        field: 'file',
-        filename: _file!.name,
-        bytes: _file!.bytes!,
-      ),
-    ];
-    int totalBytes = _file!.bytes!.length;
+    final sessionFileId = _thumbnailResult?.sessionFileId;
+    final bool useStagedFile = sessionFileId != null && sessionFileId.isNotEmpty;
+
+    final files = <UploadFileItem>[];
+    int totalBytes = 0;
 
     final fields = <String, String>{
       'watermark_type': _watermarkType,
@@ -207,6 +211,20 @@ class _PdfWatermarkProgressPageState extends State<PdfWatermarkProgressPage> {
       'opacity': _opacity.toString(),
       'font_size': _fontSize.toString(),
     };
+
+    if (useStagedFile) {
+      fields['session_file_id'] = sessionFileId;
+      totalBytes = 1;
+    } else {
+      files.add(
+        UploadFileItem(
+          field: 'file',
+          filename: _file!.name,
+          bytes: _file!.bytes!,
+        ),
+      );
+      totalBytes = _file!.bytes!.length;
+    }
 
     if (_watermarkType == 'text') {
       fields['text'] = _activeText;

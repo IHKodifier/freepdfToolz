@@ -10,6 +10,7 @@ from fastapi import APIRouter, BackgroundTasks, File, Form, HTTPException, Uploa
 from fastapi.responses import FileResponse
 
 from app.services.pdf_crop_service import crop_pdf
+from app.services.file_staging_service import FileStagingService
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -44,7 +45,8 @@ def cleanup_directory(path: str) -> None:
 @router.post("/crop")
 async def crop_pdf_endpoint(
     background_tasks: BackgroundTasks,
-    file: UploadFile = File(...),
+    file: Optional[UploadFile] = File(None),
+    session_file_id: Optional[str] = Form(None),
     left: float = Form(0.0),
     top: float = Form(0.0),
     right: float = Form(0.0),
@@ -53,11 +55,12 @@ async def crop_pdf_endpoint(
     target_page: int = Form(0),
 ):
     """
-    Applies margin cropping to an uploaded PDF document.
+    Applies margin cropping to an uploaded or staged PDF document.
     Executes non-destructive /CropBox modifications locally using PyMuPDF.
 
     Parameters:
-    - file: Uploaded PDF file
+    - file: Uploaded PDF file (optional if session_file_id provided)
+    - session_file_id: Session token of previously staged file in RAM
     - left: Left margin trim in points (float >= 0)
     - top: Top margin trim in points (float >= 0)
     - right: Right margin trim in points (float >= 0)
@@ -65,13 +68,6 @@ async def crop_pdf_endpoint(
     - apply_to_all: Boolean flag to crop all pages or only target_page
     - target_page: Zero-based page index to crop if apply_to_all is False
     """
-    filename = (file.filename or "document.pdf").strip()
-    if not filename.lower().endswith(".pdf"):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Only PDF files are supported.",
-        )
-
     max_bytes = get_max_file_bytes()
 
     # Create temporary working directory
@@ -79,19 +75,45 @@ async def crop_pdf_endpoint(
     background_tasks.add_task(cleanup_directory, str(temp_dir))
 
     temp_input_path = temp_dir / "input.pdf"
+    filename = "document.pdf"
+    file_bytes: Optional[bytes] = None
+
+    if session_file_id:
+        staged = FileStagingService.get_staged_file(session_file_id)
+        if staged:
+            file_bytes, filename = staged
+        elif file is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Staged session file expired or not found. Please upload again.",
+            )
+
+    if file_bytes is None and file is not None:
+        filename = (file.filename or "document.pdf").strip()
+        if not filename.lower().endswith(".pdf"):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Only PDF files are supported.",
+            )
+        file_bytes = await file.read()
+
+    if file_bytes is None or len(file_bytes) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No PDF file or valid session_file_id provided.",
+        )
+
+    if len(file_bytes) > max_bytes:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"File exceeds maximum allowed size of {max_bytes // (1024 * 1024)}MB.",
+        )
+
     temp_output_path = temp_dir / f"{Path(filename).stem}_cropped.pdf"
-    file_size = 0
 
     try:
         with open(temp_input_path, "wb") as f:
-            while chunk := await file.read(1024 * 1024):  # 1MB chunk
-                file_size += len(chunk)
-                if file_size > max_bytes:
-                    raise HTTPException(
-                        status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-                        detail=f"File exceeds maximum allowed size of {max_bytes // (1024 * 1024)}MB.",
-                    )
-                f.write(chunk)
+            f.write(file_bytes)
 
         # Execute PDF cropping
         try:

@@ -49,7 +49,8 @@ You are an AI coding assistant working on **FreePDFToolz.me & freeOCR.me**. Befo
      - Returns `output_path`.
 2. Create `src/backend/app/api/v1/endpoints/tools_pdf_to_word.py`:
    - Endpoint `POST /api/v1/tools/pdf-to-word`:
-     - Accepts `file: UploadFile`, optional `start_page: int = Form(1)`, `end_page: int | None = Form(None)`.
+     - Accepts `file: Optional[UploadFile] = File(None)`, `session_file_id: Optional[str] = Form(None)`, optional `start_page: int = Form(1)`, `end_page: int | None = Form(None)`.
+     - **Volatile File Session Staging:** If `session_file_id` is passed, loads the PDF file bytes directly from `FileStagingService.get_staged_file(session_file_id)` in RAM, completely eliminating redundant file uploads over the network.
      - Validates PDF format and file size limits against `app_limits_config.json`.
      - Returns converted `.docx` stream (`FileResponse` with `application/vnd.openxmlformats-officedocument.wordprocessingml.document`).
      - Cleans up ephemeral working directory in background tasks.
@@ -63,9 +64,13 @@ You are an AI coding assistant working on **FreePDFToolz.me & freeOCR.me**. Befo
 2. **Workspace Page (`/pdf-to-word/process` in `src/frontend/lib/pages/pdf_to_word_progress_page.dart`):**
    - Telemetry: `TelemetryService.trackPageView('/pdf-to-word/process')`.
    - Ad #2 (`AdSenseBanner()`) with GAM 60s auto-refresh.
-   - Document overview card (filename, page count, file size).
+   - **Ultra-Fast Thumbnails & Session Staging Integration:**
+     - Uses `PdfThumbnailService.fetchThumbnails(file)` which automatically leverages 200px max bounding box, WebP compression (quality 65 with JPEG fallback), and 16-page initial viewport batching to display the document cover preview.
+     - Captures and stores `res.sessionFileId` in state.
+   - Document overview card (filename, page count, file size, cover preview thumbnail).
    - Conversion Scope Selector: "All Pages" vs "Custom Page Range".
-   - Primary Action: "Convert to Word (.docx)" button with progress spinner.
+   - **Primary Action (Zero Double Upload):**
+     - "Convert to Word (.docx)" button sends `fields: {'session_file_id': sessionFileId, 'start_page': ..., 'end_page': ...}` with `files: []` via `ApiService.uploadToolFiles()`, executing conversion with 0 upload file bytes.
    - Result card with direct `.docx` download button and Ad #3.
 3. Register routes in `src/frontend/lib/main.dart`.
 
@@ -77,7 +82,8 @@ You are an AI coding assistant working on **FreePDFToolz.me & freeOCR.me**. Befo
 1. `test_convert_pdf_to_docx_success()`: Converts sample PDF to `.docx` and verifies valid DOCX OpenXML structure (`[Content_Types].xml` in zip).
 2. `test_convert_pdf_to_docx_page_subset()`: Converts specific page range and verifies output validity.
 3. `test_pdf_to_word_endpoint_success()`: Asserts `POST /api/v1/tools/pdf-to-word` returns HTTP 200 and DOCX content-type.
-4. `test_pdf_to_word_endpoint_non_pdf_returns_400()`: Non-PDF rejected with HTTP 400.
+4. `test_pdf_to_word_endpoint_with_session_file_id()`: Asserts DOCX conversion succeeds using staged `session_file_id` without uploading raw bytes.
+5. `test_pdf_to_word_endpoint_non_pdf_returns_400()`: Non-PDF rejected with HTTP 400.
 
 ### Frontend Tests (`src/frontend/test/pages/pdf_to_word_page_test.dart`):
 1. `test_pdf_to_word_page_renders_dropzone_and_ad()`: Verifies landing page renders dropzone and Ad #1.

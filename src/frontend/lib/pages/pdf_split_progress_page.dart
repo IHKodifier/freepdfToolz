@@ -116,6 +116,13 @@ class _PdfSplitProgressPageState extends State<PdfSplitProgressPage> {
           });
         }
       },
+      onBatchLoaded: (allPages, totalPages) {
+        if (mounted) {
+          setState(() {
+            _detectedPages = totalPages;
+          });
+        }
+      },
     );
     if (!mounted) return;
     setState(() {
@@ -231,7 +238,10 @@ class _PdfSplitProgressPageState extends State<PdfSplitProgressPage> {
     if (_file == null || _file!.bytes == null) return;
     if (_mode == 'ranges' && _validationWarning != null) return;
 
-    final totalBytes = _file!.bytes!.length;
+    final sessionFileId = _thumbnailResult?.sessionFileId;
+    final bool useStagedFile = sessionFileId != null && sessionFileId.isNotEmpty;
+    final totalBytes = useStagedFile ? 1 : _file!.bytes!.length;
+
     setState(() {
       _isSplitting = true;
       _isUploading = true;
@@ -248,15 +258,22 @@ class _PdfSplitProgressPageState extends State<PdfSplitProgressPage> {
         fields['split_every'] = _splitEvery.toString();
       }
 
-      final response = await ApiService.uploadToolFiles(
-        endpoint: '/tools/split',
-        files: [
+      final List<UploadFileItem> files = [];
+      if (useStagedFile) {
+        fields['session_file_id'] = sessionFileId;
+      } else {
+        files.add(
           UploadFileItem(
             fieldName: 'file',
             filename: _file!.name,
             bytes: _file!.bytes!,
           ),
-        ],
+        );
+      }
+
+      final response = await ApiService.uploadToolFiles(
+        endpoint: '/tools/split',
+        files: files,
         fields: fields,
         onProgress: (sent, total) {
           if (mounted) {

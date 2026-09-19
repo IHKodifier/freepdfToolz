@@ -128,6 +128,13 @@ class _PdfRedactProgressPageState extends State<PdfRedactProgressPage> {
           });
         }
       },
+      onBatchLoaded: (allPages, totalPages) {
+        if (mounted) {
+          setState(() {
+            _detectedPages = totalPages;
+          });
+        }
+      },
     );
     if (!mounted) return;
     setState(() {
@@ -161,28 +168,40 @@ class _PdfRedactProgressPageState extends State<PdfRedactProgressPage> {
     final query = _searchController.text.trim();
     if (_file == null || _file!.bytes == null || query.isEmpty) return;
 
+    final sessionFileId = _thumbnailResult?.sessionFileId;
+    final bool useStagedFile = sessionFileId != null && sessionFileId.isNotEmpty;
+    final totalBytes = useStagedFile ? 1 : _file!.bytes!.length;
+
     setState(() {
       _isProcessing = true;
       _isUploading = true;
       _uploadSentBytes = 0;
-      _uploadTotalBytes = _file!.bytes!.length;
+      _uploadTotalBytes = totalBytes;
       _errorMessage = null;
     });
 
     try {
-      final uploadRes = await ApiService.uploadToolFiles(
-        endpoint: '/tools/redact',
-        fields: {
-          'search_phrase': query,
-          'case_sensitive': _caseSensitive.toString(),
-        },
-        files: [
+      final fields = <String, String>{
+        'search_phrase': query,
+        'case_sensitive': _caseSensitive.toString(),
+      };
+      final List<UploadFileItem> files = [];
+      if (useStagedFile) {
+        fields['session_file_id'] = sessionFileId;
+      } else {
+        files.add(
           UploadFileItem(
             field: 'file',
             filename: _file!.name,
             bytes: _file!.bytes!,
           ),
-        ],
+        );
+      }
+
+      final uploadRes = await ApiService.uploadToolFiles(
+        endpoint: '/tools/redact',
+        fields: fields,
+        files: files,
         onProgress: (sent, total) {
           if (mounted) {
             setState(() {

@@ -118,6 +118,13 @@ class _PdfNumberPagesProgressPageState extends State<PdfNumberPagesProgressPage>
           });
         }
       },
+      onBatchLoaded: (allPages, totalPages) {
+        if (mounted) {
+          setState(() {
+            _detectedPages = totalPages;
+          });
+        }
+      },
     );
     if (!mounted) return;
     setState(() {
@@ -185,33 +192,43 @@ class _PdfNumberPagesProgressPageState extends State<PdfNumberPagesProgressPage>
   }
 
   Future<void> _executeNumberPages() async {
-    if (_file == null || _file!.bytes == null) return;
+    final sessionFileId = _thumbnailResult?.sessionFileId;
+    final bool useStagedFile = sessionFileId != null && sessionFileId.isNotEmpty;
+    final totalBytes = useStagedFile ? 1 : _file!.bytes!.length;
 
     setState(() {
       _isSaving = true;
       _isUploading = true;
       _uploadSentBytes = 0;
-      _uploadTotalBytes = _file!.bytes!.length;
+      _uploadTotalBytes = totalBytes;
       _errorMessage = null;
     });
 
     try {
-      final uploadRes = await ApiService.uploadToolFiles(
-        endpoint: '/tools/number-pages',
-        fields: {
-          'position': _selectedPosition,
-          'format': _activeFormatString,
-          'skip_cover': _skipCover.toString(),
-          'start_page': _startNumber.toString(),
-          'font_size': _fontSize.toString(),
-        },
-        files: [
+      final fields = <String, String>{
+        'position': _selectedPosition,
+        'format': _activeFormatString,
+        'skip_cover': _skipCover.toString(),
+        'start_page': _startNumber.toString(),
+        'font_size': _fontSize.toString(),
+      };
+      final List<UploadFileItem> files = [];
+      if (useStagedFile) {
+        fields['session_file_id'] = sessionFileId;
+      } else {
+        files.add(
           UploadFileItem(
             field: 'file',
             filename: _file!.name,
             bytes: _file!.bytes!,
           ),
-        ],
+        );
+      }
+
+      final uploadRes = await ApiService.uploadToolFiles(
+        endpoint: '/tools/number-pages',
+        fields: fields,
+        files: files,
         onProgress: (sent, total) {
           if (mounted) {
             setState(() {

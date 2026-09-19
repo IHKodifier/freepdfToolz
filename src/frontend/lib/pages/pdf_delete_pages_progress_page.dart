@@ -104,6 +104,13 @@ class _PdfDeletePagesProgressPageState extends State<PdfDeletePagesProgressPage>
           });
         }
       },
+      onBatchLoaded: (allPages, totalPages) {
+        if (mounted) {
+          setState(() {
+            _detectedPages = totalPages;
+          });
+        }
+      },
     );
     if (!mounted) return;
     setState(() {
@@ -173,7 +180,9 @@ class _PdfDeletePagesProgressPageState extends State<PdfDeletePagesProgressPage>
     if (_file == null || _file!.bytes == null) return;
     if (_deletedPageIndices.isEmpty || _deletedPageIndices.length >= _detectedPages) return;
 
-    final totalBytes = _file!.bytes!.length;
+    final sessionFileId = _thumbnailResult?.sessionFileId;
+    final bool useStagedFile = sessionFileId != null && sessionFileId.isNotEmpty;
+    final totalBytes = useStagedFile ? 1 : _file!.bytes!.length;
     setState(() {
       _isSaving = true;
       _isUploading = true;
@@ -184,16 +193,26 @@ class _PdfDeletePagesProgressPageState extends State<PdfDeletePagesProgressPage>
 
     try {
       final pagesList = _deletedPageIndices.toList()..sort();
-      final response = await ApiService.uploadToolFiles(
-        endpoint: '/tools/delete-pages',
-        files: [
+      final fields = <String, String>{
+        'pages': jsonEncode(pagesList),
+      };
+      final List<UploadFileItem> files = [];
+      if (useStagedFile) {
+        fields['session_file_id'] = sessionFileId;
+      } else {
+        files.add(
           UploadFileItem(
             fieldName: 'file',
             filename: _file!.name,
             bytes: _file!.bytes!,
           ),
-        ],
-        fields: {'pages': jsonEncode(pagesList)},
+        );
+      }
+
+      final response = await ApiService.uploadToolFiles(
+        endpoint: '/tools/delete-pages',
+        files: files,
+        fields: fields,
         onProgress: (sent, total) {
           if (mounted) {
             setState(() {

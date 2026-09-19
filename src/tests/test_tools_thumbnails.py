@@ -105,3 +105,49 @@ def test_render_thumbnails_rejects_non_pdf():
     response = client.post("/api/v1/tools/render-thumbnails", files=files)
     assert response.status_code == 400
     assert "pdf" in response.json().get("detail", "").lower()
+
+
+def test_render_thumbnails_session_file_staging_and_pagination():
+    """AC: First request stages file and returns session_file_id; subsequent batch retrieves without file upload."""
+    pages = [f"Page {i+1}" for i in range(25)]
+    pdf = create_mock_pdf_bytes(pages)
+    files = {"file": ("large_doc.pdf", io.BytesIO(pdf), "application/pdf")}
+    form_data = {"page_offset": "0", "batch_size": "10"}
+
+    # Initial batch upload
+    res1 = client.post("/api/v1/tools/render-thumbnails", files=files, data=form_data)
+    assert res1.status_code == 200
+    data1 = res1.json()
+
+    assert data1["total_pages"] == 25
+    assert data1["rendered_pages"] == 10
+    assert data1["has_more"] is True
+    assert "session_file_id" in data1
+    session_id = data1["session_file_id"]
+    assert session_id is not None
+
+    # Subsequent batch retrieval using ONLY session_file_id (no file multipart)
+    res2 = client.post(
+        "/api/v1/tools/render-thumbnails",
+        data={"session_file_id": session_id, "page_offset": "10", "batch_size": "10"},
+    )
+    assert res2.status_code == 200
+    data2 = res2.json()
+    assert data2["total_pages"] == 25
+    assert data2["rendered_pages"] == 10
+    assert data2["page_offset"] == 10
+    assert data2["has_more"] is True
+    assert data2["pages"][0]["page_index"] == 10
+
+    # Final batch retrieval
+    res3 = client.post(
+        "/api/v1/tools/render-thumbnails",
+        data={"session_file_id": session_id, "page_offset": "20", "batch_size": "10"},
+    )
+    assert res3.status_code == 200
+    data3 = res3.json()
+    assert data3["total_pages"] == 25
+    assert data3["rendered_pages"] == 5
+    assert data3["page_offset"] == 20
+    assert data3["has_more"] is False
+

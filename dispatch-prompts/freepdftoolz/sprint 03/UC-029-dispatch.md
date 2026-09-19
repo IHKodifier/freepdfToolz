@@ -52,7 +52,8 @@ You are an AI coding assistant working on **FreePDFToolz.me & freeOCR.me**. Befo
      - Saves document with `doc.save(str(output_path), garbage=3, deflate=True)`.
 2. Create `src/backend/app/api/v1/endpoints/tools_edit_text.py`:
    - Endpoint `POST /api/v1/tools/edit-text`:
-     - Accepts `file: UploadFile`, `replacements: str = Form("[]")`, `text_blocks: str = Form("[]")`.
+     - Accepts `file: Optional[UploadFile] = File(None)`, `session_file_id: Optional[str] = Form(None)`, `replacements: str = Form("[]")`, `text_blocks: str = Form("[]")`.
+     - **Volatile File Session Staging:** If `session_file_id` is passed, loads the PDF file bytes directly from `FileStagingService.get_staged_file(session_file_id)` in memory, completely eliminating redundant file uploads over the network.
      - Validates PDF format, JSON payload syntax, and canonical size limits.
      - Returns modified PDF stream (`FileResponse`).
      - Cleans up ephemeral working directory in background tasks.
@@ -65,11 +66,15 @@ You are an AI coding assistant working on **FreePDFToolz.me & freeOCR.me**. Befo
 2. **Workspace Page (`/edit-text/process` in `src/frontend/lib/pages/pdf_edit_text_progress_page.dart`):**
    - Telemetry: `TelemetryService.trackPageView('/edit-text/process')`.
    - Ad #2 (`AdSenseBanner()`) with GAM 60s auto-refresh.
+   - **Ultra-Fast Thumbnails & Session Staging Integration:**
+     - Uses `PdfThumbnailService.fetchThumbnails(file)` which automatically leverages 200px max bounding box, WebP compression (quality 65 with JPEG fallback), and 16-page initial viewport batching.
+     - Captures and stores `res.sessionFileId` in state.
    - Dual-Mode Editing Panel:
      - **Find & Replace Tab**: Search phrase input, replacement text input, match count preview, case sensitivity switch.
      - **Add Text Box Tab**: Custom text field, font size slider (10pt - 48pt), text color picker, draggable placement box on page preview.
    - Page Selector (Page X of Y).
-   - Primary Action: "Apply Text Edits" with spinner.
+   - **Primary Action (Zero Double Upload):**
+     - "Apply Text Edits" button sends `fields: {'session_file_id': sessionFileId, 'replacements': ..., 'text_blocks': ...}` with `files: []` via `ApiService.uploadToolFiles()`, executing with 0 upload file bytes.
    - Result card with Ad #3.
 3. Register routes in `src/frontend/lib/main.dart`.
 
@@ -82,7 +87,8 @@ You are an AI coding assistant working on **FreePDFToolz.me & freeOCR.me**. Befo
 2. `test_edit_pdf_text_inserts_new_text_box()`: Asserts new custom text box inserted at specified coordinates.
 3. `test_edit_pdf_text_case_sensitive()`: Verifies case sensitivity toggle honored during search and replace.
 4. `test_edit_pdf_endpoint_success()`: Asserts `POST /api/v1/tools/edit-text` returns HTTP 200 with valid PDF.
-5. `test_edit_pdf_endpoint_invalid_file()`: Non-PDF rejected with HTTP 400.
+5. `test_edit_pdf_endpoint_with_session_file_id()`: Asserts text edits succeed using staged `session_file_id` without uploading raw bytes.
+6. `test_edit_pdf_endpoint_invalid_file()`: Non-PDF rejected with HTTP 400.
 
 ### Frontend Tests (`src/frontend/test/pages/pdf_edit_text_page_test.dart`):
 1. `test_edit_text_page_renders_dropzone_and_ad()`: Verifies landing page renders dropzone and Ad #1.

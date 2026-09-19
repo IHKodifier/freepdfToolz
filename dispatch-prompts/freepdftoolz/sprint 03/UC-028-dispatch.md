@@ -54,7 +54,8 @@ You are an AI coding assistant working on **FreePDFToolz.me & freeOCR.me**. Befo
      - Leaves non-annotated pages completely untouched.
 2. Create `src/backend/app/api/v1/endpoints/tools_annotate.py`:
    - Endpoint `POST /api/v1/tools/annotate`:
-     - Accepts `file: UploadFile`, `annotations: str = Form(...)` (JSON string array of annotation objects).
+     - Accepts `file: Optional[UploadFile] = File(None)`, `session_file_id: Optional[str] = Form(None)`, `annotations: str = Form(...)` (JSON string array of annotation objects).
+     - **Volatile File Session Staging:** If `session_file_id` is provided, loads the PDF file bytes directly from `FileStagingService.get_staged_file(session_file_id)` in memory, eliminating redundant file uploads over the network.
      - Validates PDF format and file size against `app_limits_config.json`.
      - Streams output PDF (`FileResponse`) and registers background cleanup.
 3. Register router in `src/backend/app/api/v1/router.py`.
@@ -66,12 +67,16 @@ You are an AI coding assistant working on **FreePDFToolz.me & freeOCR.me**. Befo
 2. **Workspace Page (`/annotate/process` in `src/frontend/lib/pages/pdf_annotate_progress_page.dart`):**
    - Telemetry: `TelemetryService.trackPageView('/annotate/process')`.
    - Ad #2 (`AdSenseBanner()`) with GAM 60s auto-refresh.
+   - **Ultra-Fast Thumbnails & Session Staging Integration:**
+     - Uses `PdfThumbnailService.fetchThumbnails(file)` which automatically leverages 200px max bounding box, WebP compression (quality 65 with JPEG fallback), and 16-page initial viewport batching.
+     - Captures and holds `res.sessionFileId` in state.
    - Annotation Toolbar:
      - Tools: Highlight, Underline, Box (Rectangle), Sticky Note.
      - Color Palette: Yellow, Green, Cyan, Pink, Red.
      - Stroke Width / Opacity selector.
    - Interactive Preview Canvas with page switcher (`Page X of Y`).
-   - Primary Action: "Save Annotations & Download" with spinner.
+   - **Primary Action (Zero Double Upload):**
+     - "Save Annotations & Download" button sends `fields: {'session_file_id': sessionFileId, 'annotations': jsonEncode(annotations)}` with `files: []` via `ApiService.uploadToolFiles()`, executing with 0 upload file bytes.
    - Result card with Ad #3.
 3. Register routes in `src/frontend/lib/main.dart`.
 
@@ -85,7 +90,8 @@ You are an AI coding assistant working on **FreePDFToolz.me & freeOCR.me**. Befo
 3. `test_annotate_sticky_note()`: Verifies sticky note text annotation added with content.
 4. `test_annotate_out_of_bounds_page_raises_error()`: Invalid page index raises `ValueError`.
 5. `test_annotate_endpoint_success()`: Asserts `POST /api/v1/tools/annotate` returns HTTP 200 with valid PDF.
-6. `test_annotate_endpoint_invalid_file()`: Non-PDF rejected with HTTP 400.
+6. `test_annotate_endpoint_with_session_file_id()`: Asserts annotation succeeds using staged `session_file_id` without uploading raw bytes.
+7. `test_annotate_endpoint_invalid_file()`: Non-PDF rejected with HTTP 400.
 
 ### Frontend Tests (`src/frontend/test/pages/pdf_annotate_page_test.dart`):
 1. `test_annotate_page_renders_dropzone_and_ad()`: Verifies landing page renders dropzone and Ad #1.

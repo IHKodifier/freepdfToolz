@@ -10,6 +10,7 @@ from fastapi import APIRouter, BackgroundTasks, File, Form, HTTPException, Uploa
 from fastapi.responses import FileResponse
 
 from app.services.pdf_watermark_service import watermark_pdf
+from app.services.file_staging_service import FileStagingService
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -44,7 +45,8 @@ def cleanup_directory(path: str) -> None:
 @router.post("/watermark")
 async def watermark_pdf_endpoint(
     background_tasks: BackgroundTasks,
-    file: UploadFile = File(...),
+    file: Optional[UploadFile] = File(None),
+    session_file_id: Optional[str] = Form(None),
     watermark_type: str = Form("text"),
     text: Optional[str] = Form("CONFIDENTIAL"),
     image: Optional[UploadFile] = File(None),
@@ -53,11 +55,12 @@ async def watermark_pdf_endpoint(
     font_size: float = Form(48.0),
 ):
     """
-    Applies custom text or transparent image watermark to an uploaded PDF document.
+    Applies custom text or transparent image watermark to an uploaded or staged PDF document.
     Enforces canonical size limits and processes locally in ephemeral storage using PyMuPDF.
 
     Parameters:
-    - file: Uploaded PDF file
+    - file: Uploaded PDF file (optional if session_file_id provided)
+    - session_file_id: Session token of previously staged file in RAM
     - watermark_type: 'text' or 'image'
     - text: Watermark text string
     - image: Optional logo image file (PNG / JPG)
@@ -65,13 +68,6 @@ async def watermark_pdf_endpoint(
     - opacity: Opacity between 0.05 and 1.0 (defaults to 0.3)
     - font_size: Font size in points (defaults to 48.0)
     """
-    filename = (file.filename or "document.pdf").strip()
-    if not filename.lower().endswith(".pdf"):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Only PDF files are supported.",
-        )
-
     norm_type = (watermark_type or "text").strip().lower()
     if norm_type not in {"text", "image"}:
         raise HTTPException(
@@ -86,18 +82,43 @@ async def watermark_pdf_endpoint(
     background_tasks.add_task(cleanup_directory, str(temp_dir))
 
     temp_input_path = temp_dir / "input.pdf"
-    file_size = 0
+    filename = "document.pdf"
+    file_bytes: Optional[bytes] = None
+
+    if session_file_id:
+        staged = FileStagingService.get_staged_file(session_file_id)
+        if staged:
+            file_bytes, filename = staged
+        elif file is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Staged session file expired or not found. Please upload again.",
+            )
+
+    if file_bytes is None and file is not None:
+        filename = (file.filename or "document.pdf").strip()
+        if not filename.lower().endswith(".pdf"):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Only PDF files are supported.",
+            )
+        file_bytes = await file.read()
+
+    if file_bytes is None or len(file_bytes) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No PDF file or valid session_file_id provided.",
+        )
+
+    if len(file_bytes) > max_bytes:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"File exceeds maximum allowed size of {max_bytes // (1024 * 1024)}MB.",
+        )
 
     try:
         with open(temp_input_path, "wb") as f:
-            while chunk := await file.read(1024 * 1024):  # 1MB chunk
-                file_size += len(chunk)
-                if file_size > max_bytes:
-                    raise HTTPException(
-                        status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-                        detail=f"File exceeds maximum allowed size of {max_bytes // (1024 * 1024)}MB.",
-                    )
-                f.write(chunk)
+            f.write(file_bytes)
 
         image_path: Optional[Path] = None
         if norm_type == "image":

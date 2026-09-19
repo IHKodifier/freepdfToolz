@@ -120,6 +120,13 @@ class _PdfSignProgressPageState extends State<PdfSignProgressPage> {
           });
         }
       },
+      onBatchLoaded: (allPages, totalPages) {
+        if (mounted) {
+          setState(() {
+            _pageCount = totalPages;
+          });
+        }
+      },
     );
     if (!mounted) return;
     setState(() {
@@ -158,7 +165,47 @@ class _PdfSignProgressPageState extends State<PdfSignProgressPage> {
       return;
     }
 
-    final totalUploadSize = _file!.bytes!.length + _signatureBytes!.length;
+    final sessionFileId = _thumbnailResult?.sessionFileId;
+    final bool useStagedFile = sessionFileId != null && sessionFileId.isNotEmpty;
+
+    // Convert relative page coordinates to PDF point coordinates
+    final targetX = _relativeX * _pdfPageWidth;
+    final targetY = _relativeY * _pdfPageHeight;
+    final targetWidth = _relativeWidth * _pdfPageWidth;
+    final targetHeight = _relativeHeight * _pdfPageHeight;
+
+    final files = <UploadFileItem>[];
+    int totalUploadSize = _signatureBytes!.length;
+
+    final fields = <String, String>{
+      'page': _currentPage.toString(),
+      'x': targetX.toStringAsFixed(2),
+      'y': targetY.toStringAsFixed(2),
+      'width': targetWidth.toStringAsFixed(2),
+      'height': targetHeight.toStringAsFixed(2),
+    };
+
+    if (useStagedFile) {
+      fields['session_file_id'] = sessionFileId;
+    } else {
+      files.add(
+        UploadFileItem(
+          field: 'file',
+          filename: _file!.name,
+          bytes: _file!.bytes!,
+        ),
+      );
+      totalUploadSize += _file!.bytes!.length;
+    }
+
+    files.add(
+      UploadFileItem(
+        field: 'signature',
+        filename: 'signature.png',
+        bytes: _signatureBytes!,
+      ),
+    );
+
     setState(() {
       _isProcessing = true;
       _isUploading = true;
@@ -168,33 +215,10 @@ class _PdfSignProgressPageState extends State<PdfSignProgressPage> {
     });
 
     try {
-      // Convert relative page coordinates to PDF point coordinates
-      final targetX = _relativeX * _pdfPageWidth;
-      final targetY = _relativeY * _pdfPageHeight;
-      final targetWidth = _relativeWidth * _pdfPageWidth;
-      final targetHeight = _relativeHeight * _pdfPageHeight;
-
       final uploadRes = await ApiService.uploadToolFiles(
         endpoint: '/tools/sign',
-        fields: {
-          'page': _currentPage.toString(),
-          'x': targetX.toStringAsFixed(2),
-          'y': targetY.toStringAsFixed(2),
-          'width': targetWidth.toStringAsFixed(2),
-          'height': targetHeight.toStringAsFixed(2),
-        },
-        files: [
-          UploadFileItem(
-            field: 'file',
-            filename: _file!.name,
-            bytes: _file!.bytes!,
-          ),
-          UploadFileItem(
-            field: 'signature',
-            filename: 'signature.png',
-            bytes: _signatureBytes!,
-          ),
-        ],
+        fields: fields,
+        files: files,
         onProgress: (sent, total) {
           if (mounted) {
             setState(() {

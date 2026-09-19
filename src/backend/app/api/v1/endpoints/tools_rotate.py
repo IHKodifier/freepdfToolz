@@ -11,6 +11,7 @@ from fastapi import APIRouter, BackgroundTasks, File, Form, HTTPException, Uploa
 from fastapi.responses import FileResponse
 
 from app.services.pdf_rotate_service import rotate_pdf_pages
+from app.services.file_staging_service import FileStagingService
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -45,27 +46,55 @@ def cleanup_directory(path: str) -> None:
 @router.post("/rotate")
 async def rotate_pdf_endpoint(
     background_tasks: BackgroundTasks,
-    file: UploadFile = File(...),
+    file: Optional[UploadFile] = File(None),
+    session_file_id: Optional[str] = Form(None),
     rotations: Optional[str] = Form(None),
     rotations_json: Optional[str] = Form(None),
 ):
     """
-    Applies angle rotations to specified pages of an uploaded PDF document.
+    Applies angle rotations to specified pages of an uploaded or staged PDF document.
     Executes locally in temporary storage with PyMuPDF.
 
     Parameters:
-    - file: Uploaded PDF file
+    - file: Uploaded PDF file stream (optional if session_file_id is provided)
+    - session_file_id: Token of previously staged file in RAM cache (skips re-uploading)
     - rotations / rotations_json: JSON string mapping page index to angle,
       e.g. '{"0": 90, "1": 180}'
     """
-    filename = (file.filename or "document.pdf").strip()
-    if not filename.lower().endswith(".pdf"):
+    contents: Optional[bytes] = None
+    filename: str = "document.pdf"
+
+    if session_file_id:
+        staged = FileStagingService.get_staged_file(session_file_id)
+        if staged:
+            contents, filename = staged
+        elif file is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Staged session file expired or not found. Please upload again.",
+            )
+
+    if contents is None and file is not None:
+        filename = (file.filename or "document.pdf").strip()
+        if not filename.lower().endswith(".pdf"):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Only PDF files are supported.",
+            )
+        contents = await file.read()
+
+    if contents is None or len(contents) == 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Only PDF files are supported.",
+            detail="No PDF file or valid session_file_id provided.",
         )
 
     max_bytes = get_max_file_bytes()
+    if len(contents) > max_bytes:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"File exceeds maximum allowed size of {max_bytes // (1024 * 1024)}MB.",
+        )
 
     # Create temporary working directory
     temp_dir = Path(tempfile.mkdtemp(prefix="freepdftoolz_rotate_"))
@@ -73,18 +102,9 @@ async def rotate_pdf_endpoint(
 
     temp_input_path = temp_dir / "input.pdf"
     temp_output_path = temp_dir / f"{Path(filename).stem}_rotated.pdf"
-    file_size = 0
 
     try:
-        with open(temp_input_path, "wb") as f:
-            while chunk := await file.read(1024 * 1024):  # 1MB chunk
-                file_size += len(chunk)
-                if file_size > max_bytes:
-                    raise HTTPException(
-                        status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-                        detail=f"File exceeds maximum allowed size of {max_bytes // (1024 * 1024)}MB.",
-                    )
-                f.write(chunk)
+        temp_input_path.write_bytes(contents)
 
         # Parse rotation instructions
         raw_rotations = rotations or rotations_json or "{}"

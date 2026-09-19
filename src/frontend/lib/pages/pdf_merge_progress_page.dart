@@ -45,6 +45,7 @@ class _PdfMergeProgressPageState extends State<PdfMergeProgressPage> {
   int? _mergedSizeBytes;
   bool _isDragging = false;
   final Map<String, Uint8List?> _fileThumbnails = {};
+  final Map<String, String> _fileSessionIds = {};
   final Set<String> _loadingThumbnailFiles = {};
   bool _isUploadingThumbnails = false;
   int _thumbnailSentBytes = 0;
@@ -91,6 +92,9 @@ class _PdfMergeProgressPageState extends State<PdfMergeProgressPage> {
       if (mounted) {
         setState(() {
           _fileThumbnails[key] = res.getPageBytes(0);
+          if (res.sessionFileId != null && res.sessionFileId!.isNotEmpty) {
+            _fileSessionIds[key] = res.sessionFileId!;
+          }
           _loadingThumbnailFiles.remove(key);
           _isUploadingThumbnails = false;
         });
@@ -278,22 +282,42 @@ class _PdfMergeProgressPageState extends State<PdfMergeProgressPage> {
 
     try {
       final uploadFiles = <UploadFileItem>[];
+      final stagedIds = <String>[];
+      bool allStaged = true;
+
       for (int i = 0; i < _files.length; i++) {
         final file = _files[i];
-        if (file.bytes != null) {
-          uploadFiles.add(
-            UploadFileItem(
-              fieldName: 'files',
-              filename: file.name,
-              bytes: file.bytes!,
-            ),
-          );
+        final stagedId = _fileSessionIds[file.name];
+        if (stagedId != null && stagedId.isNotEmpty) {
+          stagedIds.add(stagedId);
+        } else {
+          allStaged = false;
+          break;
+        }
+      }
+
+      final Map<String, String> fields = {};
+      if (allStaged && stagedIds.length == _files.length) {
+        fields['session_file_ids'] = jsonEncode(stagedIds);
+      } else {
+        for (int i = 0; i < _files.length; i++) {
+          final file = _files[i];
+          if (file.bytes != null) {
+            uploadFiles.add(
+              UploadFileItem(
+                fieldName: 'files',
+                filename: file.name,
+                bytes: file.bytes!,
+              ),
+            );
+          }
         }
       }
 
       final response = await ApiService.uploadToolFiles(
         endpoint: '/tools/merge',
         files: uploadFiles,
+        fields: fields.isNotEmpty ? fields : null,
         onProgress: (sent, total) {
           if (mounted) {
             setState(() {

@@ -108,6 +108,13 @@ class _PdfCompressProgressPageState extends State<PdfCompressProgressPage> {
           });
         }
       },
+      onBatchLoaded: (allPages, totalPages) {
+        if (mounted) {
+          setState(() {
+            _detectedPages = totalPages;
+          });
+        }
+      },
     );
     if (!mounted) return;
     setState(() {
@@ -145,26 +152,38 @@ class _PdfCompressProgressPageState extends State<PdfCompressProgressPage> {
       return;
     }
 
+    final sessionFileId = _thumbnailResult?.sessionFileId;
+    final bool useStagedFile = sessionFileId != null && sessionFileId.isNotEmpty;
+    final totalBytes = useStagedFile ? 1 : _file!.bytes!.length;
+
     setState(() {
       _isCompressing = true;
       _isUploading = true;
       _uploadSentBytes = 0;
-      _uploadTotalBytes = _file!.bytes!.length;
+      _uploadTotalBytes = totalBytes;
       _errorMessage = null;
       _resultBytes = null;
     });
 
     try {
-      final response = await ApiService.uploadToolFiles(
-        endpoint: '/tools/compress',
-        files: [
+      final fields = <String, String>{'level': _selectedLevel};
+      final List<UploadFileItem> files = [];
+      if (useStagedFile) {
+        fields['session_file_id'] = sessionFileId;
+      } else {
+        files.add(
           UploadFileItem(
             fieldName: 'file',
             filename: _file!.name,
             bytes: _file!.bytes!,
           ),
-        ],
-        fields: {'level': _selectedLevel},
+        );
+      }
+
+      final response = await ApiService.uploadToolFiles(
+        endpoint: '/tools/compress',
+        files: files,
+        fields: fields,
         onProgress: (sent, total) {
           if (mounted) {
             setState(() {

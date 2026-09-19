@@ -95,3 +95,31 @@ def test_merge_enforces_max_files_limit():
     response = client.post("/api/v1/tools/merge", files=files)
     assert response.status_code == 400
     assert "Maximum 50 files" in response.json()["detail"]
+
+
+def test_merge_with_session_file_ids():
+    """AC: Merging works seamlessly using volatile session_file_ids without raw file re-upload."""
+    import json
+    from app.services.file_staging_service import FileStagingService
+
+    pdf1 = create_mock_pdf_bytes(["Staged Document 1"])
+    pdf2 = create_mock_pdf_bytes(["Staged Document 2"])
+
+    stage_id_1 = FileStagingService.store_staged_file("staged1.pdf", pdf1)
+    stage_id_2 = FileStagingService.store_staged_file("staged2.pdf", pdf2)
+
+    session_payload = json.dumps([stage_id_1, stage_id_2])
+
+    response = client.post(
+        "/api/v1/tools/merge",
+        data={"session_file_ids": session_payload},
+    )
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "application/pdf"
+
+    result_doc = fitz.open(stream=response.content, filetype="pdf")
+    assert result_doc.page_count == 2
+    assert "Staged Document 1" in result_doc[0].get_text()
+    assert "Staged Document 2" in result_doc[1].get_text()
+    result_doc.close()
+
