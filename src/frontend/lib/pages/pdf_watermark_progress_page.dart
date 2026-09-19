@@ -1,11 +1,12 @@
+import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:http/http.dart' as http;
 import '../widgets/app_header.dart';
 import '../widgets/app_footer.dart';
 import '../widgets/adsense_banner.dart';
+import '../widgets/tool_upload_progress_indicator.dart';
 import '../utils/app_limits_config.dart';
 import '../services/telemetry_service.dart';
 import '../services/download_helper.dart';
@@ -52,6 +53,9 @@ class _PdfWatermarkProgressPageState extends State<PdfWatermarkProgressPage> {
   String? _logoFilename;
 
   bool _isProcessing = false;
+  bool _isUploading = false;
+  int _uploadSentBytes = 0;
+  int _uploadTotalBytes = 0;
   String? _errorMessage;
 
   // Generated Result
@@ -166,51 +170,70 @@ class _PdfWatermarkProgressPageState extends State<PdfWatermarkProgressPage> {
       return;
     }
 
+    final files = <UploadFileItem>[
+      UploadFileItem(
+        field: 'file',
+        filename: _file!.name,
+        bytes: _file!.bytes!,
+      ),
+    ];
+    int totalBytes = _file!.bytes!.length;
+
+    final fields = <String, String>{
+      'watermark_type': _watermarkType,
+      'rotation': _rotation.toString(),
+      'opacity': _opacity.toString(),
+      'font_size': _fontSize.toString(),
+    };
+
+    if (_watermarkType == 'text') {
+      fields['text'] = _activeText;
+    } else if (_watermarkType == 'image' && _logoBytes != null) {
+      files.add(
+        UploadFileItem(
+          field: 'image',
+          filename: _logoFilename ?? 'logo.png',
+          bytes: _logoBytes!,
+        ),
+      );
+      totalBytes += _logoBytes!.length;
+    }
+
     setState(() {
       _isProcessing = true;
+      _isUploading = true;
+      _uploadSentBytes = 0;
+      _uploadTotalBytes = totalBytes;
       _errorMessage = null;
     });
 
     try {
-      final uri = Uri.parse('${ApiService.baseUrl}/tools/watermark');
-      final request = http.MultipartRequest('POST', uri);
-
-      request.files.add(
-        http.MultipartFile.fromBytes(
-          'file',
-          _file!.bytes!,
-          filename: _file!.name,
-        ),
+      final uploadRes = await ApiService.uploadToolFiles(
+        endpoint: '/tools/watermark',
+        fields: fields,
+        files: files,
+        onProgress: (sent, total) {
+          if (mounted) {
+            setState(() {
+              _uploadSentBytes = sent;
+              _uploadTotalBytes = total;
+              if (sent >= total && total > 0) {
+                _isUploading = false;
+              }
+            });
+          }
+        },
       );
 
-      request.fields['watermark_type'] = _watermarkType;
-      request.fields['rotation'] = _rotation.toString();
-      request.fields['opacity'] = _opacity.toString();
-      request.fields['font_size'] = _fontSize.toString();
-
-      if (_watermarkType == 'text') {
-        request.fields['text'] = _activeText;
-      } else if (_watermarkType == 'image' && _logoBytes != null) {
-        request.files.add(
-          http.MultipartFile.fromBytes(
-            'image',
-            _logoBytes!,
-            filename: _logoFilename ?? 'logo.png',
-          ),
-        );
-      }
-
-      final streamedResponse = await request.send();
-      final response = await http.Response.fromStream(streamedResponse);
-
-      if (response.statusCode == 200) {
+      if (uploadRes.statusCode == 200) {
         final rawStem = _file!.name.replaceAll(RegExp(r'\.pdf$', caseSensitive: false), '');
-        final outName = '${rawStem}_watermarked.pdf';
+        final outName = uploadRes.filename ?? '${rawStem}_watermarked.pdf';
 
         setState(() {
-          _resultBytes = response.bodyBytes;
+          _resultBytes = uploadRes.bytes;
           _resultFilename = outName;
           _isProcessing = false;
+          _isUploading = false;
         });
 
         TelemetryService.trackEvent('watermark_completed', {
@@ -219,19 +242,21 @@ class _PdfWatermarkProgressPageState extends State<PdfWatermarkProgressPage> {
           'type': _watermarkType,
         });
       } else {
-        String detail = 'Watermarking failed with status ${response.statusCode}';
+        String detail = 'Watermarking failed with status ${uploadRes.statusCode}';
         try {
-          detail = response.body;
+          detail = utf8.decode(uploadRes.bytes);
         } catch (_) {}
         setState(() {
           _errorMessage = detail;
           _isProcessing = false;
+          _isUploading = false;
         });
       }
     } catch (e) {
       setState(() {
         _errorMessage = 'Connection error: $e';
         _isProcessing = false;
+        _isUploading = false;
       });
     }
   }
@@ -749,6 +774,16 @@ class _PdfWatermarkProgressPageState extends State<PdfWatermarkProgressPage> {
 
           const SizedBox(height: 24),
 
+          if (_isProcessing) ...[
+            ToolUploadProgressIndicator(
+              isUploading: _isUploading,
+              sentBytes: _uploadSentBytes,
+              totalBytes: _uploadTotalBytes,
+              processingLabel: 'Overlaying watermark layers in RAM disk...',
+            ),
+            const SizedBox(height: 16),
+          ],
+
           // Primary Apply Button
           SizedBox(
             width: double.infinity,
@@ -762,7 +797,9 @@ class _PdfWatermarkProgressPageState extends State<PdfWatermarkProgressPage> {
                     )
                   : const Icon(Icons.branding_watermark_rounded, size: 20),
               label: Text(
-                _isProcessing ? 'Applying Watermark...' : 'Apply Watermark',
+                _isProcessing
+                    ? (_isUploading ? 'Uploading Watermark Assets...' : 'Applying Watermark...')
+                    : 'Apply Watermark',
                 style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
               ),
               style: ElevatedButton.styleFrom(

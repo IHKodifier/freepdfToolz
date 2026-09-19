@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import '../widgets/app_header.dart';
 import '../widgets/app_footer.dart';
 import '../widgets/adsense_banner.dart';
@@ -10,6 +9,7 @@ import '../services/telemetry_service.dart';
 import '../services/download_helper.dart';
 import '../services/api_service.dart';
 import '../services/pdf_thumbnail_service.dart';
+import '../widgets/tool_upload_progress_indicator.dart';
 import 'pdf_merge_page.dart' show SelectedPdfFile;
 
 /// Dedicated Status & Progress Page for PDF Delete Pages (/delete-pages/process)
@@ -35,6 +35,9 @@ class _PdfDeletePagesProgressPageState extends State<PdfDeletePagesProgressPage>
   double _zoomLevel = 1.0;
 
   bool _isSaving = false;
+  bool _isUploading = false;
+  int _uploadSentBytes = 0;
+  int _uploadTotalBytes = 0;
   String? _errorMessage;
   PdfThumbnailResult? _thumbnailResult;
   bool _isLoadingThumbnails = false;
@@ -148,29 +151,41 @@ class _PdfDeletePagesProgressPageState extends State<PdfDeletePagesProgressPage>
     if (_file == null || _file!.bytes == null) return;
     if (_deletedPageIndices.isEmpty || _deletedPageIndices.length >= _detectedPages) return;
 
+    final totalBytes = _file!.bytes!.length;
     setState(() {
       _isSaving = true;
+      _isUploading = true;
+      _uploadSentBytes = 0;
+      _uploadTotalBytes = totalBytes;
       _errorMessage = null;
     });
 
     try {
-      final uri = Uri.parse('${ApiService.baseUrl}/tools/delete-pages');
-      final request = http.MultipartRequest('POST', uri);
-
       final pagesList = _deletedPageIndices.toList()..sort();
-      request.fields['pages'] = jsonEncode(pagesList);
-      request.files.add(
-        http.MultipartFile.fromBytes(
-          'file',
-          _file!.bytes!,
-          filename: _file!.name,
-        ),
+      final response = await ApiService.uploadToolFiles(
+        endpoint: '/tools/delete-pages',
+        files: [
+          UploadFileItem(
+            fieldName: 'file',
+            filename: _file!.name,
+            bytes: _file!.bytes!,
+          ),
+        ],
+        fields: {'pages': jsonEncode(pagesList)},
+        onProgress: (sent, total) {
+          if (mounted) {
+            setState(() {
+              _uploadSentBytes = sent;
+              _uploadTotalBytes = total;
+              if (sent >= total) {
+                _isUploading = false;
+              }
+            });
+          }
+        },
       );
 
-      final streamedResponse = await request.send();
-      final response = await http.Response.fromStream(streamedResponse);
-
-      if (response.statusCode == 200) {
+      if (response.isSuccess) {
         final defaultName = '${_file!.name.replaceAll('.pdf', '')}_pruned.pdf';
         String downloadName = defaultName;
         final disposition = response.headers['content-disposition'];
@@ -186,6 +201,7 @@ class _PdfDeletePagesProgressPageState extends State<PdfDeletePagesProgressPage>
           _resultBytes = response.bodyBytes;
           _resultFilename = downloadName;
           _isSaving = false;
+          _isUploading = false;
         });
 
         TelemetryService.trackEvent('pdf_delete_pages_completed', {
@@ -198,18 +214,22 @@ class _PdfDeletePagesProgressPageState extends State<PdfDeletePagesProgressPage>
       } else {
         String detail = 'Delete operation failed (HTTP ${response.statusCode})';
         try {
-          final decoded = jsonDecode(response.body);
+          final decoded = jsonDecode(response.bodyString);
           if (decoded['detail'] != null) detail = decoded['detail'];
-        } catch (_) {}
+        } catch (_) {
+          if (response.bodyString.isNotEmpty) detail = response.bodyString;
+        }
         setState(() {
           _errorMessage = detail;
           _isSaving = false;
+          _isUploading = false;
         });
       }
     } catch (e) {
       setState(() {
         _errorMessage = 'Network error during delete operation: $e';
         _isSaving = false;
+        _isUploading = false;
       });
     }
   }
@@ -681,6 +701,16 @@ class _PdfDeletePagesProgressPageState extends State<PdfDeletePagesProgressPage>
                         const SizedBox(height: 20),
                       ],
 
+                      if (_isSaving) ...[
+                        ToolUploadProgressIndicator(
+                          sentBytes: _uploadSentBytes,
+                          totalBytes: _uploadTotalBytes,
+                          isUploading: _isUploading,
+                          processingLabel: 'Deleting Selected Pages in RAM disk...',
+                          accentColor: const Color(0xFFCF222E),
+                        ),
+                      ],
+
                       // Action Button
                       ElevatedButton.icon(
                         onPressed: (_isSaving || isAllSelected || isNoneSelected)
@@ -698,7 +728,9 @@ class _PdfDeletePagesProgressPageState extends State<PdfDeletePagesProgressPage>
                             : const Icon(Icons.delete_sweep_rounded),
                         label: Text(
                           _isSaving
-                              ? 'Deleting Selected Pages...'
+                              ? (_isUploading
+                                  ? 'Uploading PDF (${(_uploadTotalBytes > 0 ? (_uploadSentBytes / _uploadTotalBytes * 100).toInt() : 0)}%)...'
+                                  : 'Deleting Selected Pages...')
                               : 'Delete Pages & Generate PDF',
                           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                         ),

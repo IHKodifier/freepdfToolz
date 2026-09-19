@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import '../widgets/app_header.dart';
 import '../widgets/app_footer.dart';
 import '../widgets/adsense_banner.dart';
@@ -10,6 +9,7 @@ import '../services/telemetry_service.dart';
 import '../services/download_helper.dart';
 import '../services/api_service.dart';
 import '../services/pdf_thumbnail_service.dart';
+import '../widgets/tool_upload_progress_indicator.dart';
 import 'pdf_merge_page.dart' show SelectedPdfFile;
 
 /// Dedicated Status & Progress Page for PDF Split (/split/process)
@@ -37,6 +37,9 @@ class _PdfSplitProgressPageState extends State<PdfSplitProgressPage> {
   int _splitEvery = 2;
 
   bool _isSplitting = false;
+  bool _isUploading = false;
+  int _uploadSentBytes = 0;
+  int _uploadTotalBytes = 0;
   String? _errorMessage;
   String? _validationWarning;
   PdfThumbnailResult? _thumbnailResult;
@@ -206,34 +209,47 @@ class _PdfSplitProgressPageState extends State<PdfSplitProgressPage> {
     if (_file == null || _file!.bytes == null) return;
     if (_mode == 'ranges' && _validationWarning != null) return;
 
+    final totalBytes = _file!.bytes!.length;
     setState(() {
       _isSplitting = true;
+      _isUploading = true;
+      _uploadSentBytes = 0;
+      _uploadTotalBytes = totalBytes;
       _errorMessage = null;
     });
 
     try {
-      final uri = Uri.parse('${ApiService.baseUrl}/tools/split');
-      final request = http.MultipartRequest('POST', uri);
-
-      request.fields['mode'] = _mode;
+      final fields = <String, String>{'mode': _mode};
       if (_mode == 'ranges') {
-        request.fields['ranges'] = _rangesController.text.trim();
+        fields['ranges'] = _rangesController.text.trim();
       } else if (_mode == 'fixed') {
-        request.fields['split_every'] = _splitEvery.toString();
+        fields['split_every'] = _splitEvery.toString();
       }
 
-      request.files.add(
-        http.MultipartFile.fromBytes(
-          'file',
-          _file!.bytes!,
-          filename: _file!.name,
-        ),
+      final response = await ApiService.uploadToolFiles(
+        endpoint: '/tools/split',
+        files: [
+          UploadFileItem(
+            fieldName: 'file',
+            filename: _file!.name,
+            bytes: _file!.bytes!,
+          ),
+        ],
+        fields: fields,
+        onProgress: (sent, total) {
+          if (mounted) {
+            setState(() {
+              _uploadSentBytes = sent;
+              _uploadTotalBytes = total;
+              if (sent >= total) {
+                _isUploading = false;
+              }
+            });
+          }
+        },
       );
 
-      final streamedResponse = await request.send();
-      final response = await http.Response.fromStream(streamedResponse);
-
-      if (response.statusCode == 200) {
+      if (response.isSuccess) {
         final contentType = response.headers['content-type'] ?? 'application/pdf';
         final isZip = contentType.contains('zip');
         final defaultName = isZip
@@ -255,6 +271,7 @@ class _PdfSplitProgressPageState extends State<PdfSplitProgressPage> {
           _resultFilename = downloadName;
           _resultMimeType = isZip ? 'application/zip' : 'application/pdf';
           _isSplitting = false;
+          _isUploading = false;
         });
 
         TelemetryService.trackEvent('pdf_split_completed', {
@@ -265,18 +282,22 @@ class _PdfSplitProgressPageState extends State<PdfSplitProgressPage> {
       } else {
         String detail = 'Split operation failed (HTTP ${response.statusCode})';
         try {
-          final decoded = jsonDecode(response.body);
+          final decoded = jsonDecode(response.bodyString);
           if (decoded['detail'] != null) detail = decoded['detail'];
-        } catch (_) {}
+        } catch (_) {
+          if (response.bodyString.isNotEmpty) detail = response.bodyString;
+        }
         setState(() {
           _errorMessage = detail;
           _isSplitting = false;
+          _isUploading = false;
         });
       }
     } catch (e) {
       setState(() {
         _errorMessage = 'Network error during split operation: $e';
         _isSplitting = false;
+        _isUploading = false;
       });
     }
   }
@@ -792,6 +813,16 @@ class _PdfSplitProgressPageState extends State<PdfSplitProgressPage> {
 
                         const SizedBox(height: 28),
 
+                        if (_isSplitting) ...[
+                          ToolUploadProgressIndicator(
+                            sentBytes: _uploadSentBytes,
+                            totalBytes: _uploadTotalBytes,
+                            isUploading: _isUploading,
+                            processingLabel: 'Splitting PDF Document...',
+                            accentColor: const Color(0xFF0969DA),
+                          ),
+                        ],
+
                         // Split PDF Submit Action Button
                         SizedBox(
                           width: double.infinity,
@@ -810,13 +841,28 @@ class _PdfSplitProgressPageState extends State<PdfSplitProgressPage> {
                               elevation: 0,
                             ),
                             child: _isSplitting
-                                ? const SizedBox(
-                                    height: 22,
-                                    width: 22,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2.5,
-                                      color: Colors.white,
-                                    ),
+                                ? Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const SizedBox(
+                                        height: 20,
+                                        width: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2.5,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Text(
+                                        _isUploading
+                                            ? 'Uploading PDF (${(_uploadTotalBytes > 0 ? (_uploadSentBytes / _uploadTotalBytes * 100).toInt() : 0)}%)...'
+                                            : 'Splitting PDF...',
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ],
                                   )
                                 : const Text(
                                     'Split PDF',

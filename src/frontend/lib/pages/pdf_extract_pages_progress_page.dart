@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import '../widgets/app_header.dart';
 import '../widgets/app_footer.dart';
 import '../widgets/adsense_banner.dart';
@@ -10,6 +9,7 @@ import '../services/telemetry_service.dart';
 import '../services/download_helper.dart';
 import '../services/api_service.dart';
 import '../services/pdf_thumbnail_service.dart';
+import '../widgets/tool_upload_progress_indicator.dart';
 import 'pdf_merge_page.dart' show SelectedPdfFile;
 
 /// Dedicated Status & Progress Page for PDF Extract Pages (/extract-pages/process)
@@ -38,6 +38,9 @@ class _PdfExtractPagesProgressPageState extends State<PdfExtractPagesProgressPag
   final TextEditingController _rangeController = TextEditingController();
 
   bool _isSaving = false;
+  bool _isUploading = false;
+  int _uploadSentBytes = 0;
+  int _uploadTotalBytes = 0;
   String? _errorMessage;
   PdfThumbnailResult? _thumbnailResult;
   bool _isLoadingThumbnails = false;
@@ -256,32 +259,44 @@ class _PdfExtractPagesProgressPageState extends State<PdfExtractPagesProgressPag
     if (_file == null || _file!.bytes == null) return;
     if (_selectedPageIndices.isEmpty) return;
 
+    final totalBytes = _file!.bytes!.length;
     setState(() {
       _isSaving = true;
+      _isUploading = true;
+      _uploadSentBytes = 0;
+      _uploadTotalBytes = totalBytes;
       _errorMessage = null;
     });
 
     try {
-      final uri = Uri.parse('${ApiService.baseUrl}/tools/extract-pages');
-      final request = http.MultipartRequest('POST', uri);
-
-      // Send 1-based page list to endpoint
       final pagesList = _selectedPageIndices.map((i) => i + 1).toList()..sort();
-      request.fields['pages'] = pagesList.join(', ');
-      request.fields['output_mode'] = _outputMode;
-
-      request.files.add(
-        http.MultipartFile.fromBytes(
-          'file',
-          _file!.bytes!,
-          filename: _file!.name,
-        ),
+      final response = await ApiService.uploadToolFiles(
+        endpoint: '/tools/extract-pages',
+        files: [
+          UploadFileItem(
+            fieldName: 'file',
+            filename: _file!.name,
+            bytes: _file!.bytes!,
+          ),
+        ],
+        fields: {
+          'pages': pagesList.join(', '),
+          'output_mode': _outputMode,
+        },
+        onProgress: (sent, total) {
+          if (mounted) {
+            setState(() {
+              _uploadSentBytes = sent;
+              _uploadTotalBytes = total;
+              if (sent >= total) {
+                _isUploading = false;
+              }
+            });
+          }
+        },
       );
 
-      final streamedResponse = await request.send();
-      final response = await http.Response.fromStream(streamedResponse);
-
-      if (response.statusCode == 200) {
+      if (response.isSuccess) {
         final cleanBase = _file!.name.replaceAll('.pdf', '');
         final defaultName = _outputMode == 'separate'
             ? '${cleanBase}_extracted_pages.zip'
@@ -306,6 +321,7 @@ class _PdfExtractPagesProgressPageState extends State<PdfExtractPagesProgressPag
           _resultFilename = downloadName;
           _resultMimeType = mimeType;
           _isSaving = false;
+          _isUploading = false;
         });
 
         TelemetryService.trackEvent('pdf_extract_pages_completed', {
@@ -318,18 +334,22 @@ class _PdfExtractPagesProgressPageState extends State<PdfExtractPagesProgressPag
       } else {
         String detail = 'Extract operation failed (HTTP ${response.statusCode})';
         try {
-          final decoded = jsonDecode(response.body);
+          final decoded = jsonDecode(response.bodyString);
           if (decoded['detail'] != null) detail = decoded['detail'];
-        } catch (_) {}
+        } catch (_) {
+          if (response.bodyString.isNotEmpty) detail = response.bodyString;
+        }
         setState(() {
           _errorMessage = detail;
           _isSaving = false;
+          _isUploading = false;
         });
       }
     } catch (e) {
       setState(() {
         _errorMessage = 'Network error during extract operation: $e';
         _isSaving = false;
+        _isUploading = false;
       });
     }
   }
@@ -868,6 +888,16 @@ class _PdfExtractPagesProgressPageState extends State<PdfExtractPagesProgressPag
                         const SizedBox(height: 20),
                       ],
 
+                      if (_isSaving) ...[
+                        ToolUploadProgressIndicator(
+                          sentBytes: _uploadSentBytes,
+                          totalBytes: _uploadTotalBytes,
+                          isUploading: _isUploading,
+                          processingLabel: 'Extracting Pages in RAM disk...',
+                          accentColor: const Color(0xFF0969DA),
+                        ),
+                      ],
+
                       // Primary Extract Action Button
                       ElevatedButton.icon(
                         onPressed: (_isSaving || selectedCount == 0)
@@ -885,7 +915,9 @@ class _PdfExtractPagesProgressPageState extends State<PdfExtractPagesProgressPag
                             : const Icon(Icons.file_download_outlined),
                         label: Text(
                           _isSaving
-                              ? 'Extracting Selected Pages...'
+                              ? (_isUploading
+                                  ? 'Uploading PDF (${(_uploadTotalBytes > 0 ? (_uploadSentBytes / _uploadTotalBytes * 100).toInt() : 0)}%)...'
+                                  : 'Extracting Selected Pages...')
                               : 'Extract Pages',
                           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                         ),

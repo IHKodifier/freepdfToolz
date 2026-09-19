@@ -7,6 +7,10 @@ import 'package:http/http.dart' as http;
 import 'api_uploader_stub.dart'
     if (dart.library.html) 'api_uploader_web.dart' as uploader;
 
+export 'api_uploader_stub.dart'
+    if (dart.library.html) 'api_uploader_web.dart'
+    show UploadFileItem, ToolUploadResponse;
+
 class UploadResult {
   final bool isSuccess;
   final String? jobId;
@@ -212,6 +216,27 @@ class ApiService {
         errorMessage: 'Network exception during upload: $e',
       );
     }
+  }
+
+  /// Executes multipart tool uploads with true socket byte tracking polled every 600ms.
+  static Future<uploader.ToolUploadResponse> uploadToolFiles({
+    required String endpoint,
+    required List<uploader.UploadFileItem> files,
+    Map<String, String>? fields,
+    Map<String, String>? headers,
+    Function(int sentBytes, int totalBytes)? onProgress,
+    Duration pollInterval = const Duration(milliseconds: 600),
+  }) {
+    final cleanEndpoint = endpoint.startsWith('/') ? endpoint : '/$endpoint';
+    final url = '$baseUrl$cleanEndpoint';
+    return uploader.executeToolUploadWithProgress(
+      url: url,
+      files: files,
+      fields: fields,
+      headers: headers,
+      onProgress: onProgress,
+      pollInterval: pollInterval,
+    );
   }
 
   static Future<Map<String, dynamic>?> fetchJobPreview(String jobId) async {

@@ -1,9 +1,10 @@
+import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import '../widgets/app_header.dart';
 import '../widgets/app_footer.dart';
 import '../widgets/adsense_banner.dart';
+import '../widgets/tool_upload_progress_indicator.dart';
 import '../utils/app_limits_config.dart';
 import '../services/telemetry_service.dart';
 import '../services/download_helper.dart';
@@ -40,6 +41,9 @@ class _PdfRedactProgressPageState extends State<PdfRedactProgressPage> {
   bool _caseSensitive = false;
 
   bool _isProcessing = false;
+  bool _isUploading = false;
+  int _uploadSentBytes = 0;
+  int _uploadTotalBytes = 0;
   String? _errorMessage;
 
   // Generated Result
@@ -137,35 +141,48 @@ class _PdfRedactProgressPageState extends State<PdfRedactProgressPage> {
 
     setState(() {
       _isProcessing = true;
+      _isUploading = true;
+      _uploadSentBytes = 0;
+      _uploadTotalBytes = _file!.bytes!.length;
       _errorMessage = null;
     });
 
     try {
-      final uri = Uri.parse('${ApiService.baseUrl}/tools/redact');
-      final request = http.MultipartRequest('POST', uri);
-
-      request.files.add(
-        http.MultipartFile.fromBytes(
-          'file',
-          _file!.bytes!,
-          filename: _file!.name,
-        ),
+      final uploadRes = await ApiService.uploadToolFiles(
+        endpoint: '/tools/redact',
+        fields: {
+          'search_phrase': query,
+          'case_sensitive': _caseSensitive.toString(),
+        },
+        files: [
+          UploadFileItem(
+            field: 'file',
+            filename: _file!.name,
+            bytes: _file!.bytes!,
+          ),
+        ],
+        onProgress: (sent, total) {
+          if (mounted) {
+            setState(() {
+              _uploadSentBytes = sent;
+              _uploadTotalBytes = total;
+              if (sent >= total && total > 0) {
+                _isUploading = false;
+              }
+            });
+          }
+        },
       );
 
-      request.fields['search_phrase'] = query;
-      request.fields['case_sensitive'] = _caseSensitive.toString();
-
-      final streamedResponse = await request.send();
-      final response = await http.Response.fromStream(streamedResponse);
-
-      if (response.statusCode == 200) {
+      if (uploadRes.statusCode == 200) {
         final rawStem = _file!.name.replaceAll(RegExp(r'\.pdf$', caseSensitive: false), '');
-        final outName = '${rawStem}_redacted.pdf';
+        final outName = uploadRes.filename ?? '${rawStem}_redacted.pdf';
 
         setState(() {
-          _resultBytes = response.bodyBytes;
+          _resultBytes = uploadRes.bytes;
           _resultFilename = outName;
           _isProcessing = false;
+          _isUploading = false;
         });
 
         TelemetryService.trackEvent('redact_completed', {
@@ -174,19 +191,21 @@ class _PdfRedactProgressPageState extends State<PdfRedactProgressPage> {
           'case_sensitive': _caseSensitive,
         });
       } else {
-        String detail = 'Redaction failed with status ${response.statusCode}';
+        String detail = 'Redaction failed with status ${uploadRes.statusCode}';
         try {
-          detail = response.body;
+          detail = utf8.decode(uploadRes.bytes);
         } catch (_) {}
         setState(() {
           _errorMessage = detail;
           _isProcessing = false;
+          _isUploading = false;
         });
       }
     } catch (e) {
       setState(() {
         _errorMessage = 'Connection error: $e';
         _isProcessing = false;
+        _isUploading = false;
       });
     }
   }
@@ -929,6 +948,16 @@ class _PdfRedactProgressPageState extends State<PdfRedactProgressPage> {
           const SizedBox(height: 16),
         ],
 
+        if (_isProcessing) ...[
+          ToolUploadProgressIndicator(
+            isUploading: _isUploading,
+            sentBytes: _uploadSentBytes,
+            totalBytes: _uploadTotalBytes,
+            processingLabel: 'Sanitizing document streams in RAM disk...',
+          ),
+          const SizedBox(height: 16),
+        ],
+
         SizedBox(
           width: double.infinity,
           height: 52,
@@ -936,23 +965,23 @@ class _PdfRedactProgressPageState extends State<PdfRedactProgressPage> {
             onPressed: canApply ? _applyRedaction : null,
             style: ElevatedButton.styleFrom(
               backgroundColor: _redactColor,
-              disabledBackgroundColor: _redactColor.withOpacity(0.35),
+              disabledBackgroundColor: _redactColor.withValues(alpha: 0.35),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               elevation: 0,
             ),
             child: _isProcessing
-                ? const Row(
+                ? Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      SizedBox(
+                      const SizedBox(
                         width: 20,
                         height: 20,
                         child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
                       ),
-                      SizedBox(width: 12),
+                      const SizedBox(width: 12),
                       Text(
-                        'Sanitizing Document Streams...',
-                        style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 16),
+                        _isUploading ? 'Uploading Document...' : 'Sanitizing Document Streams...',
+                        style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 16),
                       ),
                     ],
                   )

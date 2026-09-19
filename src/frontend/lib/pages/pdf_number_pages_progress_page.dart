@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import '../widgets/app_header.dart';
 import '../widgets/app_footer.dart';
 import '../widgets/adsense_banner.dart';
@@ -10,6 +9,7 @@ import '../services/telemetry_service.dart';
 import '../services/download_helper.dart';
 import '../services/api_service.dart';
 import '../services/pdf_thumbnail_service.dart';
+import '../widgets/tool_upload_progress_indicator.dart';
 import 'pdf_merge_page.dart' show SelectedPdfFile;
 
 /// Dedicated Status & Progress Page for PDF Number Pages (/number-pages/process)
@@ -46,6 +46,9 @@ class _PdfNumberPagesProgressPageState extends State<PdfNumberPagesProgressPage>
   double _fontSize = 10.0;
 
   bool _isSaving = false;
+  bool _isUploading = false;
+  int _uploadSentBytes = 0;
+  int _uploadTotalBytes = 0;
   String? _errorMessage;
 
   // Generated Result
@@ -164,48 +167,51 @@ class _PdfNumberPagesProgressPageState extends State<PdfNumberPagesProgressPage>
 
     setState(() {
       _isSaving = true;
+      _isUploading = true;
+      _uploadSentBytes = 0;
+      _uploadTotalBytes = _file!.bytes!.length;
       _errorMessage = null;
     });
 
     try {
-      final uri = Uri.parse('${ApiService.baseUrl}/tools/number-pages');
-      final request = http.MultipartRequest('POST', uri);
-
-      request.fields['position'] = _selectedPosition;
-      request.fields['format'] = _activeFormatString;
-      request.fields['skip_cover'] = _skipCover.toString();
-      request.fields['start_page'] = _startNumber.toString();
-      request.fields['font_size'] = _fontSize.toString();
-
-      request.files.add(
-        http.MultipartFile.fromBytes(
-          'file',
-          _file!.bytes!,
-          filename: _file!.name,
-        ),
+      final uploadRes = await ApiService.uploadToolFiles(
+        endpoint: '/tools/number-pages',
+        fields: {
+          'position': _selectedPosition,
+          'format': _activeFormatString,
+          'skip_cover': _skipCover.toString(),
+          'start_page': _startNumber.toString(),
+          'font_size': _fontSize.toString(),
+        },
+        files: [
+          UploadFileItem(
+            field: 'file',
+            filename: _file!.name,
+            bytes: _file!.bytes!,
+          ),
+        ],
+        onProgress: (sent, total) {
+          if (mounted) {
+            setState(() {
+              _uploadSentBytes = sent;
+              _uploadTotalBytes = total;
+              if (sent >= total && total > 0) {
+                _isUploading = false;
+              }
+            });
+          }
+        },
       );
 
-      final streamedResponse = await request.send();
-      final response = await http.Response.fromStream(streamedResponse);
-
-      if (response.statusCode == 200) {
+      if (uploadRes.statusCode == 200) {
         final cleanBase = _file!.name.replaceAll('.pdf', '');
-        String downloadName = '${cleanBase}_numbered.pdf';
-
-        final disposition = response.headers['content-disposition'];
-        if (disposition != null && disposition.contains('filename=')) {
-          final regex = RegExp(r'filename=["' "'" r']?([^"' "'" r';\r\n]+)');
-          final match = regex.firstMatch(disposition);
-          if (match != null && match.group(1) != null) {
-            downloadName = match.group(1)!.trim();
-          }
-        }
-
+        final downloadName = uploadRes.filename ?? '${cleanBase}_numbered.pdf';
 
         setState(() {
-          _resultBytes = response.bodyBytes;
+          _resultBytes = uploadRes.bytes;
           _resultFilename = downloadName;
           _isSaving = false;
+          _isUploading = false;
         });
 
         TelemetryService.trackEvent('pdf_number_pages_completed', {
@@ -214,24 +220,26 @@ class _PdfNumberPagesProgressPageState extends State<PdfNumberPagesProgressPage>
           'skip_cover': _skipCover,
           'start_number': _startNumber,
           'total_pages': _detectedPages,
-          'output_size_bytes': response.bodyBytes.length,
+          'output_size_bytes': uploadRes.bytes.length,
           'filename': downloadName,
         });
       } else {
-        String detail = 'Number pages operation failed (HTTP ${response.statusCode})';
+        String detail = 'Number pages operation failed (HTTP ${uploadRes.statusCode})';
         try {
-          final decoded = jsonDecode(response.body);
+          final decoded = jsonDecode(utf8.decode(uploadRes.bytes));
           if (decoded['detail'] != null) detail = decoded['detail'];
         } catch (_) {}
         setState(() {
           _errorMessage = detail;
           _isSaving = false;
+          _isUploading = false;
         });
       }
     } catch (e) {
       setState(() {
         _errorMessage = 'Network error during number pages operation: $e';
         _isSaving = false;
+        _isUploading = false;
       });
     }
   }
@@ -1035,44 +1043,59 @@ class _PdfNumberPagesProgressPageState extends State<PdfNumberPagesProgressPage>
   }
 
   Widget _buildActionButtons(bool isDark) {
-    return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 320, minHeight: 48),
-        child: ElevatedButton(
-          onPressed: _isSaving ? null : _executeNumberPages,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF4F46E5),
-            foregroundColor: Colors.white,
-            disabledBackgroundColor: const Color(0xFF4F46E5).withValues(alpha: 0.5),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (_isSaving) ...[
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: ToolUploadProgressIndicator(
+              isUploading: _isUploading,
+              sentBytes: _uploadSentBytes,
+              totalBytes: _uploadTotalBytes,
+              processingLabel: 'Applying page numbers in Linux tmpfs RAM disk...',
             ),
-            elevation: 2,
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
           ),
-          child: _isSaving
-              ? const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    ),
-                    SizedBox(width: 10),
-                    Flexible(
-                      child: Text(
-                        'Applying Numbers...',
-                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                )
+          const SizedBox(height: 16),
+        ],
+        Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 320, minHeight: 48),
+            child: ElevatedButton(
+              onPressed: _isSaving ? null : _executeNumberPages,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF4F46E5),
+                foregroundColor: Colors.white,
+                disabledBackgroundColor: const Color(0xFF4F46E5).withValues(alpha: 0.5),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 2,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+              ),
+              child: _isSaving
+                  ? Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Flexible(
+                          child: Text(
+                            _isUploading ? 'Uploading Document...' : 'Applying Numbers...',
+                            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    )
               : const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   mainAxisSize: MainAxisSize.min,
@@ -1088,8 +1111,10 @@ class _PdfNumberPagesProgressPageState extends State<PdfNumberPagesProgressPage>
                     ),
                   ],
                 ),
+            ),
+          ),
         ),
-      ),
+      ],
     );
   }
 

@@ -3,7 +3,6 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:desktop_drop/desktop_drop.dart';
-import 'package:http/http.dart' as http;
 import '../widgets/app_header.dart';
 import '../widgets/app_footer.dart';
 import '../widgets/adsense_banner.dart';
@@ -13,6 +12,7 @@ import '../services/telemetry_service.dart';
 import '../services/download_helper.dart';
 import '../services/api_service.dart';
 import '../services/pdf_thumbnail_service.dart';
+import '../widgets/tool_upload_progress_indicator.dart';
 import '../main.dart' show themeNotifier;
 import 'pdf_merge_page.dart' show SelectedPdfFile;
 
@@ -37,6 +37,9 @@ class PdfMergeProgressPage extends StatefulWidget {
 class _PdfMergeProgressPageState extends State<PdfMergeProgressPage> {
   late List<SelectedPdfFile> _files;
   bool _isMerging = false;
+  bool _isUploading = false;
+  int _uploadSentBytes = 0;
+  int _uploadTotalBytes = 0;
   String? _errorMessage;
   Uint8List? _mergedPdfBytes;
   int? _mergedSizeBytes;
@@ -242,32 +245,52 @@ class _PdfMergeProgressPageState extends State<PdfMergeProgressPage> {
     TelemetryService.trackToolUploadStarted(tool: 'merge', fileSizeKb: totalBytes / 1024.0);
     final stopwatch = Stopwatch()..start();
 
-    try {
-      final uri = Uri.parse('${ApiService.baseUrl}/tools/merge');
-      final request = http.MultipartRequest('POST', uri);
+    setState(() {
+      _isMerging = true;
+      _isUploading = true;
+      _uploadSentBytes = 0;
+      _uploadTotalBytes = totalBytes;
+      _errorMessage = null;
+    });
 
+    try {
+      final uploadFiles = <UploadFileItem>[];
       for (int i = 0; i < _files.length; i++) {
         final file = _files[i];
         if (file.bytes != null) {
-          request.files.add(
-            http.MultipartFile.fromBytes(
-              'files',
-              file.bytes!,
+          uploadFiles.add(
+            UploadFileItem(
+              fieldName: 'files',
               filename: file.name,
+              bytes: file.bytes!,
             ),
           );
         }
       }
 
-      final streamedResponse = await request.send();
-      final response = await http.Response.fromStream(streamedResponse);
+      final response = await ApiService.uploadToolFiles(
+        endpoint: '/tools/merge',
+        files: uploadFiles,
+        onProgress: (sent, total) {
+          if (mounted) {
+            setState(() {
+              _uploadSentBytes = sent;
+              _uploadTotalBytes = total;
+              if (sent >= total) {
+                _isUploading = false;
+              }
+            });
+          }
+        },
+      );
       stopwatch.stop();
 
-      if (response.statusCode == 200) {
+      if (response.isSuccess) {
         setState(() {
           _mergedPdfBytes = response.bodyBytes;
           _mergedSizeBytes = response.bodyBytes.length;
           _isMerging = false;
+          _isUploading = false;
         });
         TelemetryService.trackEvent('pdf_merge_completed', {
           'file_count': _files.length,
@@ -281,18 +304,23 @@ class _PdfMergeProgressPageState extends State<PdfMergeProgressPage> {
       } else {
         String detail = 'Merge failed (HTTP ${response.statusCode})';
         try {
-          final decoded = jsonDecode(response.body);
+          final decoded = jsonDecode(response.bodyString);
           if (decoded['detail'] != null) detail = decoded['detail'];
-        } catch (_) {}
+        } catch (_) {
+          if (response.bodyString.isNotEmpty) detail = response.bodyString;
+        }
         setState(() {
           _errorMessage = detail;
           _isMerging = false;
+          _isUploading = false;
         });
       }
     } catch (e) {
+      stopwatch.stop();
       setState(() {
         _errorMessage = 'Network error during merge: $e';
         _isMerging = false;
+        _isUploading = false;
       });
     }
   }
@@ -374,6 +402,15 @@ class _PdfMergeProgressPageState extends State<PdfMergeProgressPage> {
                         else ...[
                           _buildFilesManagerCard(theme, isDark),
                           const SizedBox(height: 24),
+                          if (_isMerging) ...[
+                            ToolUploadProgressIndicator(
+                              sentBytes: _uploadSentBytes,
+                              totalBytes: _uploadTotalBytes,
+                              isUploading: _isUploading,
+                              processingLabel: 'Merging ${_files.length} PDFs...',
+                              accentColor: const Color(0xFFEF4444),
+                            ),
+                          ],
                           _buildActionButton(theme),
                         ],
 
@@ -767,10 +804,10 @@ class _PdfMergeProgressPageState extends State<PdfMergeProgressPage> {
           padding: const EdgeInsets.symmetric(vertical: 14),
         ),
         child: _isMerging
-            ? const Row(
+            ? Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  SizedBox(
+                  const SizedBox(
                     width: 20,
                     height: 20,
                     child: CircularProgressIndicator(
@@ -778,10 +815,12 @@ class _PdfMergeProgressPageState extends State<PdfMergeProgressPage> {
                       valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                     ),
                   ),
-                  SizedBox(width: 12),
+                  const SizedBox(width: 12),
                   Text(
-                    'Merging PDFs...',
-                    style: TextStyle(
+                    _isUploading
+                        ? 'Uploading PDFs (${(_uploadTotalBytes > 0 ? (_uploadSentBytes / _uploadTotalBytes * 100).toInt() : 0)}%)...'
+                        : 'Merging PDFs...',
+                    style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
                     ),
