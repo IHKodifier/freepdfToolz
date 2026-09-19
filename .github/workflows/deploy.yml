@@ -81,7 +81,7 @@ jobs:
   # =========================================================================
   # 3. BACKEND DEPLOYMENT (Independent Parallel Job, Gated by test-backend)
   # =========================================================================
-  deploy-backend:
+  deploy-freepdftoolz:
     name: Deploy Backend to GCP Cloud Run
     needs: [test-backend]
     runs-on: ubuntu-latest

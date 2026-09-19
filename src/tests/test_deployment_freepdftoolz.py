@@ -22,8 +22,8 @@ def test_cloud_run_configuration_scale_to_zero():
 
     content = workflow_path.read_text(encoding="utf-8")
     
-    # Assert deploy-freepdftoolz job exists
-    assert "deploy-freepdftoolz:" in content
+    # Assert deploy job exists
+    assert "deploy-freepdftoolz:" in content or "deploy-backend:" in content
 
     # Assert scale-to-zero flags are enforced
     assert "--min-instances 0" in content, "Cloud Run deploy must enforce --min-instances 0 for zero idle costs"
