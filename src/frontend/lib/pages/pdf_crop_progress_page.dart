@@ -1,6 +1,5 @@
 import 'dart:math' as math;
 import 'dart:typed_data';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../widgets/app_header.dart';
@@ -10,6 +9,7 @@ import '../utils/app_limits_config.dart';
 import '../services/telemetry_service.dart';
 import '../services/download_helper.dart';
 import '../services/api_service.dart';
+import '../services/pdf_thumbnail_service.dart';
 import 'pdf_merge_page.dart' show SelectedPdfFile;
 
 /// Dedicated Status & Configuration Workspace for Crop PDF (/crop/process)
@@ -33,6 +33,8 @@ class PdfCropProgressPage extends StatefulWidget {
 class _PdfCropProgressPageState extends State<PdfCropProgressPage> {
   SelectedPdfFile? _file;
   int _detectedPages = 1;
+  PdfThumbnailResult? _thumbnailResult;
+  bool _isLoadingThumbnails = false;
 
   // Margin Configuration (in points)
   double _topMargin = 0.0;
@@ -82,6 +84,20 @@ class _PdfCropProgressPageState extends State<PdfCropProgressPage> {
   void _initDocumentState(SelectedPdfFile file) {
     _detectedPages = _detectPageCount(file.bytes);
     if (mounted) setState(() {});
+    _loadThumbnails(file);
+  }
+
+  Future<void> _loadThumbnails(SelectedPdfFile file) async {
+    setState(() => _isLoadingThumbnails = true);
+    final result = await PdfThumbnailService.fetchThumbnails(file);
+    if (!mounted) return;
+    setState(() {
+      _thumbnailResult = result;
+      _isLoadingThumbnails = false;
+      if (result.isSuccess && result.totalPages > 0) {
+        _detectedPages = result.totalPages;
+      }
+    });
   }
 
   int _detectPageCount(Uint8List? bytes) {
@@ -119,7 +135,7 @@ class _PdfCropProgressPageState extends State<PdfCropProgressPage> {
     });
 
     try {
-      final uri = Uri.parse('${ApiService.baseUrl}/api/v1/tools/crop');
+      final uri = Uri.parse('${ApiService.baseUrl}/tools/crop');
       final request = http.MultipartRequest('POST', uri);
 
       request.files.add(
@@ -748,36 +764,9 @@ class _PdfCropProgressPageState extends State<PdfCropProgressPage> {
               ),
               child: Stack(
                 children: [
-                  // Simulated Page Content Lines
+                  // Real Page Content / Preview Background
                   Positioned.fill(
-                    child: Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            height: 12,
-                            width: 80,
-                            decoration: BoxDecoration(
-                              color: isDark ? const Color(0xFF30363D) : const Color(0xFFE2E8F0),
-                              borderRadius: BorderRadius.circular(3),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          for (int i = 0; i < 9; i++) ...[
-                            Container(
-                              height: 6,
-                              width: double.infinity,
-                              margin: const EdgeInsets.only(bottom: 8),
-                              decoration: BoxDecoration(
-                                color: isDark ? const Color(0xFF30363D) : const Color(0xFFE2E8F0),
-                                borderRadius: BorderRadius.circular(2),
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
+                    child: _buildCropPageBackground(isDark),
                   ),
 
                   // Cropped Viewport Box (Inside)
@@ -952,6 +941,67 @@ class _PdfCropProgressPageState extends State<PdfCropProgressPage> {
         // Ad #3 on download result page
         const AdSenseBanner(),
       ],
+    );
+  }
+
+  Widget _buildCropPageBackground(bool isDark) {
+    final pageIndex = _targetPage - 1;
+    final bytes = _thumbnailResult?.getPageBytes(pageIndex);
+    if (bytes != null && bytes.isNotEmpty) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(6),
+        child: Image.memory(
+          bytes,
+          fit: BoxFit.contain,
+          errorBuilder: (context, error, stackTrace) => _buildFallbackSkeleton(isDark),
+        ),
+      );
+    }
+
+    if (_isLoadingThumbnails) {
+      return const Center(
+        child: SizedBox(
+          width: 28,
+          height: 28,
+          child: CircularProgressIndicator(
+            strokeWidth: 2.5,
+            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0284C7)),
+          ),
+        ),
+      );
+    }
+
+    return _buildFallbackSkeleton(isDark);
+  }
+
+  Widget _buildFallbackSkeleton(bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.all(20.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            height: 12,
+            width: 80,
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF30363D) : const Color(0xFFE2E8F0),
+              borderRadius: BorderRadius.circular(3),
+            ),
+          ),
+          const SizedBox(height: 16),
+          for (int i = 0; i < 9; i++) ...[
+            Container(
+              height: 6,
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 8),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF30363D) : const Color(0xFFE2E8F0),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }

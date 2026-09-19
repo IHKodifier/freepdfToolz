@@ -5,6 +5,7 @@ import '../widgets/adsense_banner.dart';
 import '../widgets/tool_card.dart';
 import '../services/telemetry_service.dart';
 import '../services/favorites_service.dart';
+import '../utils/url_helper.dart';
 import '../main.dart';
 
 class ToolItemData {
@@ -645,6 +646,9 @@ class _PdfToolsHubPageState extends State<PdfToolsHubPage> {
                       icon: tool.icon,
                       badge: tool.badge,
                       color: tool.color,
+                      onTap: tool.id == 'ocr'
+                          ? () => UrlHelper.openUrl('https://freeocr.me')
+                          : null,
                     );
                   },
                 );

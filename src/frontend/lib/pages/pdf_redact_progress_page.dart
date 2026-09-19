@@ -1,6 +1,4 @@
-import 'dart:math' as math;
 import 'dart:typed_data';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../widgets/app_header.dart';
@@ -10,6 +8,7 @@ import '../utils/app_limits_config.dart';
 import '../services/telemetry_service.dart';
 import '../services/download_helper.dart';
 import '../services/api_service.dart';
+import '../services/pdf_thumbnail_service.dart';
 import 'pdf_merge_page.dart' show SelectedPdfFile;
 
 /// Dedicated Status & Configuration Workspace for Redact PDF (/redact/process)
@@ -33,6 +32,9 @@ class PdfRedactProgressPage extends StatefulWidget {
 class _PdfRedactProgressPageState extends State<PdfRedactProgressPage> {
   SelectedPdfFile? _file;
   int _detectedPages = 1;
+  PdfThumbnailResult? _thumbnailResult;
+  bool _isLoadingThumbnails = false;
+  double _previewZoom = 1.0;
 
   final TextEditingController _searchController = TextEditingController();
   bool _caseSensitive = false;
@@ -96,6 +98,20 @@ class _PdfRedactProgressPageState extends State<PdfRedactProgressPage> {
   void _initDocumentState(SelectedPdfFile file) {
     _detectedPages = _detectPageCount(file.bytes);
     if (mounted) setState(() {});
+    _loadThumbnails(file);
+  }
+
+  Future<void> _loadThumbnails(SelectedPdfFile file) async {
+    setState(() => _isLoadingThumbnails = true);
+    final result = await PdfThumbnailService.fetchThumbnails(file);
+    if (!mounted) return;
+    setState(() {
+      _thumbnailResult = result;
+      _isLoadingThumbnails = false;
+      if (result.isSuccess && result.totalPages > 0) {
+        _detectedPages = result.totalPages;
+      }
+    });
   }
 
   int _detectPageCount(Uint8List? bytes) {
@@ -125,7 +141,7 @@ class _PdfRedactProgressPageState extends State<PdfRedactProgressPage> {
     });
 
     try {
-      final uri = Uri.parse('${ApiService.baseUrl}/api/v1/tools/redact');
+      final uri = Uri.parse('${ApiService.baseUrl}/tools/redact');
       final request = http.MultipartRequest('POST', uri);
 
       request.files.add(
@@ -577,30 +593,89 @@ class _PdfRedactProgressPageState extends State<PdfRedactProgressPage> {
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
               const SizedBox(width: 8),
-              Flexible(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: _redactColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    hasQuery ? 'TARGET: $query' : 'READY',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: _redactColor,
+              Wrap(
+                spacing: 8,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  // Universal Zoom Controls
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF0D1117) : const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: isDark ? const Color(0xFF30363D) : const Color(0xFFE2E8F0),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          key: const Key('redact_zoom_out_btn'),
+                          icon: const Icon(Icons.remove_rounded, size: 16),
+                          tooltip: 'Zoom Out',
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(minWidth: 26, minHeight: 26),
+                          onPressed: _previewZoom > 0.8
+                              ? () => setState(() => _previewZoom = (_previewZoom - 0.25).clamp(0.8, 2.5))
+                              : null,
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 5),
+                          child: Text(
+                            '${(_previewZoom * 100).toInt()}%',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: isDark ? Colors.white : const Color(0xFF1E293B),
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          key: const Key('redact_zoom_in_btn'),
+                          icon: const Icon(Icons.add_rounded, size: 16),
+                          tooltip: 'Zoom In',
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(minWidth: 26, minHeight: 26),
+                          onPressed: _previewZoom < 2.5
+                              ? () => setState(() => _previewZoom = (_previewZoom + 0.25).clamp(0.8, 2.5))
+                              : null,
+                        ),
+                        if (_previewZoom != 1.0)
+                          IconButton(
+                            icon: const Icon(Icons.restart_alt_rounded, size: 16),
+                            tooltip: 'Reset Zoom (100%)',
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(minWidth: 26, minHeight: 26),
+                            onPressed: () => setState(() => _previewZoom = 1.0),
+                          ),
+                      ],
                     ),
                   ),
-                ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: _redactColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      hasQuery ? 'TARGET: $query' : 'READY',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: _redactColor,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
           const SizedBox(height: 4),
           Text(
-            'Visual simulation of permanent black box glyph redaction.',
+            'Visual simulation of permanent black box glyph redaction. Zoom in to inspect at full size.',
             style: TextStyle(
               fontSize: 12.5,
               color: isDark ? const Color(0xFF8B949E) : const Color(0xFF64748B),
@@ -608,117 +683,203 @@ class _PdfRedactProgressPageState extends State<PdfRedactProgressPage> {
           ),
           const SizedBox(height: 20),
 
-          // Simulated Document Canvas
-          Center(
-            child: Container(
-              width: 240,
-              height: 330,
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF21262D) : const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: isDark ? const Color(0xFF30363D) : const Color(0xFFCBD5E1),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
+          // Document Canvas (Real Thumbnail Preview + Redaction Overlay)
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Center(
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                width: 320 * _previewZoom,
+                height: 440 * _previewZoom,
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF21262D) : const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: isDark ? const Color(0xFF30363D) : const Color(0xFFCBD5E1),
                   ),
-                ],
-              ),
-              padding: const EdgeInsets.all(18),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Document Header Bar
-                  Container(
-                    height: 10,
-                    width: 70,
-                    decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF30363D) : const Color(0xFFE2E8F0),
-                      borderRadius: BorderRadius.circular(3),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.08),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
                     ),
-                  ),
-                  const SizedBox(height: 14),
-
-                  // Line 1: Normal text
-                  _buildPreviewLine(isDark, 0.9),
-                  const SizedBox(height: 8),
-
-                  // Line 2: Redacted keyword!
-                  Row(
-                    children: [
-                      _buildPreviewLine(isDark, 0.3),
-                      const SizedBox(width: 8),
-                      Container(
-                        height: 8,
-                        width: 60,
-                        decoration: BoxDecoration(
-                          color: hasQuery ? Colors.black : Colors.black26,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      _buildPreviewLine(isDark, 0.2),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-
-                  // Line 3: Normal text
-                  _buildPreviewLine(isDark, 0.85),
-                  const SizedBox(height: 8),
-
-                  // Line 4: Normal text
-                  _buildPreviewLine(isDark, 0.95),
-                  const SizedBox(height: 8),
-
-                  // Line 5: Redacted keyword!
-                  Row(
-                    children: [
-                      Container(
-                        height: 8,
-                        width: 80,
-                        decoration: BoxDecoration(
-                          color: hasQuery ? Colors.black : Colors.black26,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      _buildPreviewLine(isDark, 0.4),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-
-                  // Line 6 & 7: Normal text
-                  _buildPreviewLine(isDark, 0.75),
-                  const SizedBox(height: 8),
-                  _buildPreviewLine(isDark, 0.88),
-                  const SizedBox(height: 8),
-
-                  // Line 8: Redacted keyword!
-                  Row(
-                    children: [
-                      _buildPreviewLine(isDark, 0.45),
-                      const SizedBox(width: 8),
-                      Container(
-                        height: 8,
-                        width: 50,
-                        decoration: BoxDecoration(
-                          color: hasQuery ? Colors.black : Colors.black26,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-
-                  // Line 9: Normal text
-                  _buildPreviewLine(isDark, 0.6),
-                ],
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: _buildRedactPageBackground(isDark, hasQuery),
+                ),
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRedactPageBackground(bool isDark, bool hasQuery) {
+    final thumb = _thumbnailResult?.getPage(1);
+    if (thumb != null) {
+      return Stack(
+        children: [
+          Positioned.fill(
+            child: Image.memory(
+              thumb.imageBytes,
+              fit: BoxFit.contain,
+              width: double.infinity,
+              height: double.infinity,
+            ),
+          ),
+          if (hasQuery)
+            Positioned.fill(
+              child: Container(
+                color: Colors.black.withOpacity(0.04),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    Container(
+                      height: 12,
+                      width: 140,
+                      decoration: BoxDecoration(
+                        color: Colors.black,
+                        borderRadius: BorderRadius.circular(2),
+                        boxShadow: const [
+                          BoxShadow(color: Colors.black26, blurRadius: 4),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      height: 12,
+                      width: 100,
+                      decoration: BoxDecoration(
+                        color: Colors.black,
+                        borderRadius: BorderRadius.circular(2),
+                        boxShadow: const [
+                          BoxShadow(color: Colors.black26, blurRadius: 4),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      height: 12,
+                      width: 120,
+                      decoration: BoxDecoration(
+                        color: Colors.black,
+                        borderRadius: BorderRadius.circular(2),
+                        boxShadow: const [
+                          BoxShadow(color: Colors.black26, blurRadius: 4),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      );
+    }
+    if (_isLoadingThumbnails) {
+      return const Center(
+        child: SizedBox(
+          width: 28,
+          height: 28,
+          child: CircularProgressIndicator(strokeWidth: 2.5),
+        ),
+      );
+    }
+    return _buildFallbackSkeleton(isDark, hasQuery);
+  }
+
+  Widget _buildFallbackSkeleton(bool isDark, bool hasQuery) {
+    return Padding(
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Document Header Bar
+          Container(
+            height: 10,
+            width: 70,
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF30363D) : const Color(0xFFE2E8F0),
+              borderRadius: BorderRadius.circular(3),
+            ),
+          ),
+          const SizedBox(height: 14),
+
+          // Line 1: Normal text
+          _buildPreviewLine(isDark, 0.9),
+          const SizedBox(height: 8),
+
+          // Line 2: Redacted keyword!
+          Row(
+            children: [
+              _buildPreviewLine(isDark, 0.3),
+              const SizedBox(width: 8),
+              Container(
+                height: 8,
+                width: 60,
+                decoration: BoxDecoration(
+                  color: hasQuery ? Colors.black : Colors.black26,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(width: 8),
+              _buildPreviewLine(isDark, 0.2),
+            ],
+          ),
+          const SizedBox(height: 8),
+
+          // Line 3: Normal text
+          _buildPreviewLine(isDark, 0.85),
+          const SizedBox(height: 8),
+
+          // Line 4: Normal text
+          _buildPreviewLine(isDark, 0.95),
+          const SizedBox(height: 8),
+
+          // Line 5: Redacted keyword!
+          Row(
+            children: [
+              Container(
+                height: 8,
+                width: 80,
+                decoration: BoxDecoration(
+                  color: hasQuery ? Colors.black : Colors.black26,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(width: 8),
+              _buildPreviewLine(isDark, 0.4),
+            ],
+          ),
+          const SizedBox(height: 8),
+
+          // Line 6 & 7: Normal text
+          _buildPreviewLine(isDark, 0.75),
+          const SizedBox(height: 8),
+          _buildPreviewLine(isDark, 0.88),
+          const SizedBox(height: 8),
+
+          // Line 8: Redacted keyword!
+          Row(
+            children: [
+              _buildPreviewLine(isDark, 0.45),
+              const SizedBox(width: 8),
+              Container(
+                height: 8,
+                width: 50,
+                decoration: BoxDecoration(
+                  color: hasQuery ? Colors.black : Colors.black26,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+
+          // Line 9: Normal text
+          _buildPreviewLine(isDark, 0.6),
         ],
       ),
     );

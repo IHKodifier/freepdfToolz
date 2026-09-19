@@ -9,6 +9,7 @@ import '../utils/app_limits_config.dart';
 import '../services/telemetry_service.dart';
 import '../services/download_helper.dart';
 import '../services/api_service.dart';
+import '../services/pdf_thumbnail_service.dart';
 import 'pdf_merge_page.dart' show SelectedPdfFile;
 
 /// Dedicated Status & Progress Page for PDF Compression (/compress/process)
@@ -36,6 +37,8 @@ class _PdfCompressProgressPageState extends State<PdfCompressProgressPage> {
 
   bool _isCompressing = false;
   String? _errorMessage;
+  PdfThumbnailResult? _thumbnailResult;
+  bool _isLoadingThumbnail = false;
 
   // Compression Result Metrics
   Uint8List? _resultBytes;
@@ -76,6 +79,20 @@ class _PdfCompressProgressPageState extends State<PdfCompressProgressPage> {
     _detectedPages = _detectPageCount(file.bytes);
     _originalSizeBytes = file.sizeBytes;
     if (mounted) setState(() {});
+    _loadThumbnail(file);
+  }
+
+  Future<void> _loadThumbnail(SelectedPdfFile file) async {
+    setState(() => _isLoadingThumbnail = true);
+    final result = await PdfThumbnailService.fetchThumbnails(file);
+    if (!mounted) return;
+    setState(() {
+      _thumbnailResult = result;
+      _isLoadingThumbnail = false;
+      if (result.isSuccess && result.totalPages > 0) {
+        _detectedPages = result.totalPages;
+      }
+    });
   }
 
   int _detectPageCount(Uint8List? bytes) {
@@ -412,12 +429,24 @@ class _PdfCompressProgressPageState extends State<PdfCompressProgressPage> {
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(12),
+            width: 48,
+            height: 62,
             decoration: BoxDecoration(
-              color: Colors.red.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
+              color: isDark ? const Color(0xFF0D1117) : const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: isDark ? const Color(0xFF30363D) : const Color(0xFFCBD5E1),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.08),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
-            child: const Icon(Icons.picture_as_pdf, color: Colors.red, size: 30),
+            clipBehavior: Clip.antiAlias,
+            child: _buildThumbnailPreview(isDark),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -665,6 +694,34 @@ class _PdfCompressProgressPageState extends State<PdfCompressProgressPage> {
           const SizedBox(height: 16),
           const AdSenseBanner(),
         ],
+      ),
+    );
+  }
+
+  Widget _buildThumbnailPreview(bool isDark) {
+    final bytes = _thumbnailResult?.getPageBytes(0);
+    if (bytes != null && bytes.isNotEmpty) {
+      return Image.memory(
+        bytes,
+        fit: BoxFit.cover,
+      );
+    }
+    if (_isLoadingThumbnail) {
+      return const Center(
+        child: SizedBox(
+          width: 16,
+          height: 16,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            valueColor: AlwaysStoppedAnimation<Color>(Colors.red),
+          ),
+        ),
+      );
+    }
+    return Container(
+      color: Colors.red.withValues(alpha: 0.1),
+      child: const Center(
+        child: Icon(Icons.picture_as_pdf, color: Colors.red, size: 24),
       ),
     );
   }

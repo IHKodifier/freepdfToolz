@@ -1,6 +1,5 @@
 import 'dart:math' as math;
 import 'dart:typed_data';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:http/http.dart' as http;
@@ -11,6 +10,7 @@ import '../utils/app_limits_config.dart';
 import '../services/telemetry_service.dart';
 import '../services/download_helper.dart';
 import '../services/api_service.dart';
+import '../services/pdf_thumbnail_service.dart';
 import 'pdf_merge_page.dart' show SelectedPdfFile;
 
 /// Dedicated Status & Configuration Workspace for Watermark PDF (/watermark/process)
@@ -34,6 +34,8 @@ class PdfWatermarkProgressPage extends StatefulWidget {
 class _PdfWatermarkProgressPageState extends State<PdfWatermarkProgressPage> {
   SelectedPdfFile? _file;
   int _detectedPages = 1;
+  PdfThumbnailResult? _thumbnailResult;
+  bool _isLoadingThumbnails = false;
 
   // Watermark Configuration
   String _watermarkType = 'text'; // 'text' or 'image'
@@ -93,6 +95,20 @@ class _PdfWatermarkProgressPageState extends State<PdfWatermarkProgressPage> {
   void _initDocumentState(SelectedPdfFile file) {
     _detectedPages = _detectPageCount(file.bytes);
     if (mounted) setState(() {});
+    _loadThumbnails(file);
+  }
+
+  Future<void> _loadThumbnails(SelectedPdfFile file) async {
+    setState(() => _isLoadingThumbnails = true);
+    final result = await PdfThumbnailService.fetchThumbnails(file);
+    if (!mounted) return;
+    setState(() {
+      _thumbnailResult = result;
+      _isLoadingThumbnails = false;
+      if (result.isSuccess && result.totalPages > 0) {
+        _detectedPages = result.totalPages;
+      }
+    });
   }
 
   int _detectPageCount(Uint8List? bytes) {
@@ -156,7 +172,7 @@ class _PdfWatermarkProgressPageState extends State<PdfWatermarkProgressPage> {
     });
 
     try {
-      final uri = Uri.parse('${ApiService.baseUrl}/api/v1/tools/watermark');
+      final uri = Uri.parse('${ApiService.baseUrl}/tools/watermark');
       final request = http.MultipartRequest('POST', uri);
 
       request.files.add(
@@ -934,38 +950,11 @@ class _PdfWatermarkProgressPageState extends State<PdfWatermarkProgressPage> {
                 borderRadius: BorderRadius.circular(8),
                 child: Stack(
                   children: [
-                    // Simulated Document Skeleton Lines
-                    Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            height: 12,
-                            width: 140,
-                            decoration: BoxDecoration(
-                              color: isDark ? const Color(0xFF30363D) : const Color(0xFFE2E8F0),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          ...List.generate(9, (idx) {
-                            final wFactor = (idx % 3 == 0) ? 0.9 : (idx % 2 == 0 ? 0.75 : 0.85);
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 10.0),
-                              child: Container(
-                                height: 6,
-                                width: 220 * wFactor,
-                                decoration: BoxDecoration(
-                                  color: isDark ? const Color(0xFF30363D) : const Color(0xFFF1F5F9),
-                                  borderRadius: BorderRadius.circular(3),
-                                ),
-                              ),
-                            );
-                          }),
-                        ],
-                      ),
+                    // Real page preview background with fallback
+                    Positioned.fill(
+                      child: _buildWatermarkPageBackground(isDark),
                     ),
+
 
                     // Centered Watermark Overlay with Angle and Opacity
                     Center(
@@ -1155,4 +1144,61 @@ class _PdfWatermarkProgressPageState extends State<PdfWatermarkProgressPage> {
       ),
     );
   }
+
+  Widget _buildWatermarkPageBackground(bool isDark) {
+    final thumb = _thumbnailResult?.getPage(1);
+    if (thumb != null) {
+      return Image.memory(
+        thumb.imageBytes,
+        fit: BoxFit.contain,
+        width: double.infinity,
+        height: double.infinity,
+      );
+    }
+    if (_isLoadingThumbnails) {
+      return const Center(
+        child: SizedBox(
+          width: 28,
+          height: 28,
+          child: CircularProgressIndicator(strokeWidth: 2.5),
+        ),
+      );
+    }
+    return _buildFallbackSkeleton(isDark);
+  }
+
+  Widget _buildFallbackSkeleton(bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.all(20.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            height: 12,
+            width: 140,
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF30363D) : const Color(0xFFE2E8F0),
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+          const SizedBox(height: 16),
+          ...List.generate(9, (idx) {
+            final wFactor = (idx % 3 == 0) ? 0.9 : (idx % 2 == 0 ? 0.75 : 0.85);
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 10.0),
+              child: Container(
+                height: 6,
+                width: 220 * wFactor,
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF30363D) : const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(3),
+                ),
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
 }
+

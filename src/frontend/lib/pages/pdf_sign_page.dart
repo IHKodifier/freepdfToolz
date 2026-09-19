@@ -172,14 +172,16 @@ class _PdfSignPageState extends State<PdfSignPage> {
     return Scaffold(
       appBar: const AppHeader(currentRoute: '/sign'),
       body: SingleChildScrollView(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1000),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
+        child: Column(
+          children: [
+            Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1000),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
                   // Title & Subtitle
                   Text(
                     'Sign PDF',
@@ -346,10 +348,13 @@ class _PdfSignPageState extends State<PdfSignPage> {
             ),
           ),
         ),
-      ),
-      bottomNavigationBar: const AppFooter(),
-    );
-  }
+        const SizedBox(height: 48),
+        const AppFooter(currentRoute: '/sign'),
+      ],
+    ),
+  ),
+);
+}
 
   Widget _buildFeatureHighlights(ThemeData theme, bool isDark) {
     final features = [

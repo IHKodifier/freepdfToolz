@@ -9,6 +9,7 @@ import '../utils/app_limits_config.dart';
 import '../services/telemetry_service.dart';
 import '../services/download_helper.dart';
 import '../services/api_service.dart';
+import '../services/pdf_thumbnail_service.dart';
 import 'pdf_merge_page.dart' show SelectedPdfFile;
 
 /// Dedicated Status & Progress Page for PDF Delete Pages (/delete-pages/process)
@@ -31,9 +32,12 @@ class _PdfDeletePagesProgressPageState extends State<PdfDeletePagesProgressPage>
   SelectedPdfFile? _file;
   int _detectedPages = 1;
   final Set<int> _deletedPageIndices = {};
+  double _zoomLevel = 1.0;
 
   bool _isSaving = false;
   String? _errorMessage;
+  PdfThumbnailResult? _thumbnailResult;
+  bool _isLoadingThumbnails = false;
 
   // Pruning result
   Uint8List? _resultBytes;
@@ -71,6 +75,20 @@ class _PdfDeletePagesProgressPageState extends State<PdfDeletePagesProgressPage>
     _detectedPages = _detectPageCount(file.bytes);
     _deletedPageIndices.clear();
     if (mounted) setState(() {});
+    _loadThumbnails(file);
+  }
+
+  Future<void> _loadThumbnails(SelectedPdfFile file) async {
+    setState(() => _isLoadingThumbnails = true);
+    final result = await PdfThumbnailService.fetchThumbnails(file);
+    if (!mounted) return;
+    setState(() {
+      _thumbnailResult = result;
+      _isLoadingThumbnails = false;
+      if (result.isSuccess && result.totalPages > 0) {
+        _detectedPages = result.totalPages;
+      }
+    });
   }
 
   int _detectPageCount(Uint8List? bytes) {
@@ -512,15 +530,76 @@ class _PdfDeletePagesProgressPageState extends State<PdfDeletePagesProgressPage>
                                 ),
                               ],
                             ),
-                            Text(
-                              '${_deletedPageIndices.length} of $_detectedPages pages marked to remove ($remainingCount pages will remain)',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: isAllSelected
-                                    ? const Color(0xFFCF222E)
-                                    : (isDark ? const Color(0xFF8B949E) : const Color(0xFF64748B)),
-                              ),
+                            Wrap(
+                              spacing: 12,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              children: [
+                                // Universal Zoom Controls
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: isDark ? const Color(0xFF0D1117) : const Color(0xFFF1F5F9),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: isDark ? const Color(0xFF30363D) : const Color(0xFFE2E8F0),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      IconButton(
+                                        key: const Key('zoom_out_btn'),
+                                        icon: const Icon(Icons.remove_rounded, size: 16),
+                                        tooltip: 'Zoom Out',
+                                        padding: EdgeInsets.zero,
+                                        constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                                        onPressed: _zoomLevel > 0.75
+                                            ? () => setState(() => _zoomLevel = (_zoomLevel - 0.25).clamp(0.75, 2.0))
+                                            : null,
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6),
+                                        child: Text(
+                                          '${(_zoomLevel * 100).toInt()}%',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w700,
+                                            color: isDark ? Colors.white : const Color(0xFF1E293B),
+                                          ),
+                                        ),
+                                      ),
+                                      IconButton(
+                                        key: const Key('zoom_in_btn'),
+                                        icon: const Icon(Icons.add_rounded, size: 16),
+                                        tooltip: 'Zoom In',
+                                        padding: EdgeInsets.zero,
+                                        constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                                        onPressed: _zoomLevel < 2.0
+                                            ? () => setState(() => _zoomLevel = (_zoomLevel + 0.25).clamp(0.75, 2.0))
+                                            : null,
+                                      ),
+                                      if (_zoomLevel != 1.0)
+                                        IconButton(
+                                          icon: const Icon(Icons.restart_alt_rounded, size: 16),
+                                          tooltip: 'Reset Zoom (100%)',
+                                          padding: EdgeInsets.zero,
+                                          constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                                          onPressed: () => setState(() => _zoomLevel = 1.0),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                                Text(
+                                  '${_deletedPageIndices.length} of $_detectedPages pages marked to remove ($remainingCount pages will remain)',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: isAllSelected
+                                        ? const Color(0xFFCF222E)
+                                        : (isDark ? const Color(0xFF8B949E) : const Color(0xFF64748B)),
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
@@ -560,9 +639,9 @@ class _PdfDeletePagesProgressPageState extends State<PdfDeletePagesProgressPage>
                       GridView.builder(
                         physics: const NeverScrollableScrollPhysics(),
                         shrinkWrap: true,
-                        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                          maxCrossAxisExtent: 240,
-                          mainAxisExtent: 310,
+                        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                          maxCrossAxisExtent: 240 * _zoomLevel,
+                          mainAxisExtent: 310 * _zoomLevel,
                           crossAxisSpacing: 18,
                           mainAxisSpacing: 18,
                         ),
@@ -728,55 +807,47 @@ class _PdfDeletePagesProgressPageState extends State<PdfDeletePagesProgressPage>
 
               // Card Body: Document Visual Thumbnail representation
               Expanded(
-                child: Center(
-                  child: Container(
-                    width: 110,
-                    height: 145,
-                    decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF0D1117) : const Color(0xFFF8FAFC),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: isDeleted
-                            ? const Color(0xFFCF222E).withOpacity(0.5)
-                            : (isDark ? const Color(0xFF30363D) : const Color(0xFFCBD5E1)),
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.08),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          isDeleted ? Icons.delete_forever_rounded : Icons.description_outlined,
-                          size: 38,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  child: Center(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF0D1117) : const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
                           color: isDeleted
-                              ? const Color(0xFFCF222E)
-                              : (isDark ? const Color(0xFF8B949E) : const Color(0xFF94A3B8)),
+                              ? const Color(0xFFCF222E).withOpacity(0.5)
+                              : (isDark ? const Color(0xFF30363D) : const Color(0xFFCBD5E1)),
                         ),
-                        const SizedBox(height: 8),
-                        Container(
-                          width: 48,
-                          height: 3,
-                          decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF30363D) : const Color(0xFFE2E8F0),
-                            borderRadius: BorderRadius.circular(2),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.08),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        Container(
-                          width: 32,
-                          height: 3,
-                          decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF30363D) : const Color(0xFFE2E8F0),
-                            borderRadius: BorderRadius.circular(2),
+                        ],
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: Stack(
+                        children: [
+                          Positioned.fill(
+                            child: _buildThumbnailContent(index, isDeleted, isDark),
                           ),
-                        ),
-                      ],
+                          if (isDeleted)
+                            Positioned.fill(
+                              child: Container(
+                                color: const Color(0xFFCF222E).withOpacity(0.25),
+                                child: const Center(
+                                  child: Icon(
+                                    Icons.delete_forever_rounded,
+                                    size: 44,
+                                    color: Color(0xFFCF222E),
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -828,6 +899,69 @@ class _PdfDeletePagesProgressPageState extends State<PdfDeletePagesProgressPage>
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildThumbnailContent(int index, bool isDeleted, bool isDark) {
+    final bytes = _thumbnailResult?.getPageBytes(index);
+    if (bytes != null && bytes.isNotEmpty) {
+      return Image.memory(
+        bytes,
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) => _buildFallbackPlaceholder(isDeleted, isDark),
+      );
+    }
+
+    if (_isLoadingThumbnails) {
+      return Center(
+        child: SizedBox(
+          width: 22,
+          height: 22,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            valueColor: AlwaysStoppedAnimation<Color>(
+              isDeleted
+                  ? const Color(0xFFCF222E)
+                  : (isDark ? const Color(0xFF8B949E) : const Color(0xFF94A3B8)),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return _buildFallbackPlaceholder(isDeleted, isDark);
+  }
+
+  Widget _buildFallbackPlaceholder(bool isDeleted, bool isDark) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(
+          isDeleted ? Icons.delete_forever_rounded : Icons.description_outlined,
+          size: 38,
+          color: isDeleted
+              ? const Color(0xFFCF222E)
+              : (isDark ? const Color(0xFF8B949E) : const Color(0xFF94A3B8)),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          width: 48,
+          height: 3,
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF30363D) : const Color(0xFFE2E8F0),
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Container(
+          width: 32,
+          height: 3,
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF30363D) : const Color(0xFFE2E8F0),
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+      ],
     );
   }
 }

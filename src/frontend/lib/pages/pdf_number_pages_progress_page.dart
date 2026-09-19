@@ -9,6 +9,7 @@ import '../utils/app_limits_config.dart';
 import '../services/telemetry_service.dart';
 import '../services/download_helper.dart';
 import '../services/api_service.dart';
+import '../services/pdf_thumbnail_service.dart';
 import 'pdf_merge_page.dart' show SelectedPdfFile;
 
 /// Dedicated Status & Progress Page for PDF Number Pages (/number-pages/process)
@@ -32,6 +33,8 @@ class PdfNumberPagesProgressPage extends StatefulWidget {
 class _PdfNumberPagesProgressPageState extends State<PdfNumberPagesProgressPage> {
   SelectedPdfFile? _file;
   int _detectedPages = 1;
+  PdfThumbnailResult? _thumbnailResult;
+  bool _isLoadingThumbnails = false;
 
   // Numbering Configuration
   String _selectedPosition = 'bottom-center';
@@ -86,6 +89,20 @@ class _PdfNumberPagesProgressPageState extends State<PdfNumberPagesProgressPage>
   void _initDocumentState(SelectedPdfFile file) {
     _detectedPages = _detectPageCount(file.bytes);
     if (mounted) setState(() {});
+    _loadThumbnails(file);
+  }
+
+  Future<void> _loadThumbnails(SelectedPdfFile file) async {
+    setState(() => _isLoadingThumbnails = true);
+    final result = await PdfThumbnailService.fetchThumbnails(file);
+    if (!mounted) return;
+    setState(() {
+      _thumbnailResult = result;
+      _isLoadingThumbnails = false;
+      if (result.isSuccess && result.totalPages > 0) {
+        _detectedPages = result.totalPages;
+      }
+    });
   }
 
   int _detectPageCount(Uint8List? bytes) {
@@ -894,12 +911,11 @@ class _PdfNumberPagesProgressPageState extends State<PdfNumberPagesProgressPage>
           ),
           const SizedBox(height: 20),
 
-          // Simulated miniature A4 page
+          // Miniature A4 page preview (Real page thumbnail + numbering overlay)
           Container(
             key: const Key('live_preview_box'),
             width: 220,
             height: 310,
-            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(6),
@@ -912,51 +928,40 @@ class _PdfNumberPagesProgressPageState extends State<PdfNumberPagesProgressPage>
                 ),
               ],
             ),
-            child: Stack(
-              children: [
-                // Simulated content skeleton lines
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 24),
-                    Container(height: 8, width: 80, decoration: BoxDecoration(color: const Color(0xFFE2E8F0), borderRadius: BorderRadius.circular(4))),
-                    const SizedBox(height: 12),
-                    Container(height: 6, width: 180, decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(3))),
-                    const SizedBox(height: 8),
-                    Container(height: 6, width: 160, decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(3))),
-                    const SizedBox(height: 8),
-                    Container(height: 6, width: 170, decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(3))),
-                    const SizedBox(height: 18),
-                    Container(height: 6, width: 175, decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(3))),
-                    const SizedBox(height: 8),
-                    Container(height: 6, width: 150, decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(3))),
-                    const SizedBox(height: 8),
-                    Container(height: 6, width: 165, decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(3))),
-                  ],
-                ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(5),
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: _buildNumberingPageBackground(isDark),
+                  ),
 
-                // Live Number Position Overlay
-                Align(
-                  alignment: previewAlign,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF4F46E5).withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: const Color(0xFF4F46E5).withValues(alpha: 0.4)),
-                    ),
-                    child: Text(
-                      previewText,
-                      style: TextStyle(
-                        fontSize: _fontSize,
-                        fontFamily: 'Helvetica',
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFF1E293B),
+                  // Live Number Position Overlay
+                  Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Align(
+                      alignment: previewAlign,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF4F46E5).withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: const Color(0xFF4F46E5).withValues(alpha: 0.4)),
+                        ),
+                        child: Text(
+                          previewText,
+                          style: TextStyle(
+                            fontSize: _fontSize,
+                            fontFamily: 'Helvetica',
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF1E293B),
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
 
@@ -976,6 +981,54 @@ class _PdfNumberPagesProgressPageState extends State<PdfNumberPagesProgressPage>
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNumberingPageBackground(bool isDark) {
+    final pageNum = (_skipCover && _detectedPages > 1) ? 2 : 1;
+    final thumb = _thumbnailResult?.getPage(pageNum);
+    if (thumb != null) {
+      return Image.memory(
+        thumb.imageBytes,
+        fit: BoxFit.contain,
+        width: double.infinity,
+        height: double.infinity,
+      );
+    }
+    if (_isLoadingThumbnails) {
+      return const Center(
+        child: SizedBox(
+          width: 28,
+          height: 28,
+          child: CircularProgressIndicator(strokeWidth: 2.5),
+        ),
+      );
+    }
+    return _buildFallbackSkeleton(isDark);
+  }
+
+  Widget _buildFallbackSkeleton(bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 24),
+          Container(height: 8, width: 80, decoration: BoxDecoration(color: const Color(0xFFE2E8F0), borderRadius: BorderRadius.circular(4))),
+          const SizedBox(height: 12),
+          Container(height: 6, width: 180, decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(3))),
+          const SizedBox(height: 8),
+          Container(height: 6, width: 160, decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(3))),
+          const SizedBox(height: 8),
+          Container(height: 6, width: 170, decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(3))),
+          const SizedBox(height: 18),
+          Container(height: 6, width: 175, decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(3))),
+          const SizedBox(height: 8),
+          Container(height: 6, width: 150, decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(3))),
+          const SizedBox(height: 8),
+          Container(height: 6, width: 165, decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(3))),
         ],
       ),
     );
