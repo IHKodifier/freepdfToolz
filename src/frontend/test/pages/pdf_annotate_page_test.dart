@@ -148,6 +148,7 @@ void main() {
     // Select Green Color
     final greenColorBtn = find.byKey(const Key('color_palette_green'));
     if (greenColorBtn.evaluate().isNotEmpty) {
+      await tester.ensureVisible(greenColorBtn);
       await tester.tap(greenColorBtn);
       await tester.pumpAndSettle();
     }

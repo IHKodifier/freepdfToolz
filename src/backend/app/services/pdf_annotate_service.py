@@ -78,6 +78,8 @@ def parse_rect(item: dict[str, Any]) -> Optional[fitz.Rect]:
 
 def parse_point(item: dict[str, Any], default_rect: Optional[fitz.Rect] = None) -> fitz.Point:
     """Extracts target point for sticky notes or text annotations."""
+    if "anchor" in item and isinstance(item["anchor"], (list, tuple)) and len(item["anchor"]) >= 2:
+        return fitz.Point(float(item["anchor"][0]), float(item["anchor"][1]))
     if "point" in item and isinstance(item["point"], (list, tuple)) and len(item["point"]) >= 2:
         return fitz.Point(float(item["point"][0]), float(item["point"][1]))
     if "x" in item and "y" in item:
@@ -140,6 +142,7 @@ def annotate_pdf(
             rect = parse_rect(item)
             opacity = item.get("opacity")
             border_width = float(item.get("border_width", 1.5))
+            stroke_width = float(item.get("stroke_width", item.get("stroke_thickness", border_width)))
 
             annot = None
 
@@ -154,6 +157,7 @@ def annotate_pdf(
                     continue
                 annot = page.add_underline_annot(rect)
                 annot.set_colors(stroke=color)
+                annot.set_border(width=stroke_width)
 
             elif annot_type == "strikeout":
                 if rect is None:

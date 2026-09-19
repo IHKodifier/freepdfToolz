@@ -25,16 +25,20 @@ class AnnotationItem {
   final int pageIndex; // 0-indexed
   final AnnotationToolType tool;
   final Rect relativeRect; // Coordinates relative to page (0.0 to 1.0)
+  final Offset? anchorPoint; // Callout anchor point relative to page (0.0 to 1.0) for sticky note
   final Color color;
   final String content;
+  final double strokeThickness; // For underline stroke thickness (points)
 
   AnnotationItem({
     required this.id,
     required this.pageIndex,
     required this.tool,
     required this.relativeRect,
+    this.anchorPoint,
     required this.color,
     this.content = '',
+    this.strokeThickness = 2.5,
   });
 
   AnnotationItem copyWith({
@@ -42,16 +46,20 @@ class AnnotationItem {
     int? pageIndex,
     AnnotationToolType? tool,
     Rect? relativeRect,
+    Offset? anchorPoint,
     Color? color,
     String? content,
+    double? strokeThickness,
   }) {
     return AnnotationItem(
       id: id ?? this.id,
       pageIndex: pageIndex ?? this.pageIndex,
       tool: tool ?? this.tool,
       relativeRect: relativeRect ?? this.relativeRect,
+      anchorPoint: anchorPoint ?? this.anchorPoint,
       color: color ?? this.color,
       content: content ?? this.content,
+      strokeThickness: strokeThickness ?? this.strokeThickness,
     );
   }
 
@@ -77,7 +85,7 @@ class AnnotationItem {
     final x1 = relativeRect.right * pdfWidth;
     final y1 = relativeRect.bottom * pdfHeight;
 
-    return {
+    final map = <String, dynamic>{
       'page': pageIndex,
       'type': typeStr,
       'rect': [x0, y0, x1, y1],
@@ -87,7 +95,17 @@ class AnnotationItem {
         color.b,
       ],
       'content': content,
+      'stroke_thickness': strokeThickness,
     };
+
+    if (anchorPoint != null) {
+      final ax = anchorPoint!.dx * pdfWidth;
+      final ay = anchorPoint!.dy * pdfHeight;
+      map['anchor'] = [ax, ay];
+      map['point'] = [ax, ay];
+    }
+
+    return map;
   }
 }
 
@@ -117,19 +135,17 @@ class _PdfAnnotateProgressPageState extends State<PdfAnnotateProgressPage> {
   int _thumbnailTotalBytes = 0;
   String? _sessionFileId;
 
-  // Active Tool & Style
+  // Active Tool, Color & Stroke Style
   AnnotationToolType _activeTool = AnnotationToolType.highlight;
   Color _activeColor = const Color(0xFFFEF08A); // Classic Post-it / Highlight Yellow
+  double _activeStrokeWidth = 2.5; // Stroke thickness for underline
 
   // Preset Color Swatches
   final List<Color> _colorPalette = const [
     Color(0xFFFEF08A), // Classic Post-it Yellow
-    Color(0xFFFDE047), // Vibrant Highlighter Yellow
     Color(0xFF86EFAC), // Soft Mint Green
     Color(0xFF7DD3FC), // Sky Blue
     Color(0xFFF472B6), // Pastel Pink
-    Color(0xFFFCA5A5), // Soft Coral Red
-    Color(0xFFC084FC), // Lavender Purple
   ];
 
   // Annotation Collections & Selection State
@@ -145,6 +161,8 @@ class _PdfAnnotateProgressPageState extends State<PdfAnnotateProgressPage> {
   Offset? _drawCurrent;
   Offset? _moveStartGlobal;
   Rect? _moveInitialRect;
+  Offset? _anchorMoveStartGlobal;
+  Offset? _anchorInitialOffset;
 
   // API Execution State
   bool _isProcessing = false;
@@ -312,10 +330,16 @@ class _PdfAnnotateProgressPageState extends State<PdfAnnotateProgressPage> {
 
   void _deleteSelectedAnnotation() {
     if (_selectedAnnotationId == null) return;
+    _deleteAnnotation(_selectedAnnotationId!);
+  }
+
+  void _deleteAnnotation(String id) {
     _pushSnapshot();
     setState(() {
-      _annotations.removeWhere((a) => a.id == _selectedAnnotationId);
-      _selectedAnnotationId = null;
+      _annotations.removeWhere((a) => a.id == id);
+      if (_selectedAnnotationId == id) {
+        _selectedAnnotationId = null;
+      }
     });
   }
 
@@ -329,6 +353,21 @@ class _PdfAnnotateProgressPageState extends State<PdfAnnotateProgressPage> {
         _pushSnapshot();
         setState(() {
           _annotations[idx] = _annotations[idx].copyWith(color: newColor);
+        });
+      }
+    }
+  }
+
+  void _updateStrokeWidth(double width) {
+    setState(() {
+      _activeStrokeWidth = width;
+    });
+    if (_selectedAnnotationId != null) {
+      final idx = _annotations.indexWhere((a) => a.id == _selectedAnnotationId);
+      if (idx != -1 && _annotations[idx].tool == AnnotationToolType.underline) {
+        _pushSnapshot();
+        setState(() {
+          _annotations[idx] = _annotations[idx].copyWith(strokeThickness: width);
         });
       }
     }
@@ -439,7 +478,7 @@ class _PdfAnnotateProgressPageState extends State<PdfAnnotateProgressPage> {
     }
   }
 
-  Future<void> _promptStickyNoteDialog(Offset relativePoint, {AnnotationItem? existing}) async {
+  Future<void> _promptStickyNoteDialog(Offset relativeAnchorPoint, {AnnotationItem? existing}) async {
     final textController = TextEditingController(text: existing?.content ?? '');
     final isEditing = existing != null;
 
@@ -469,7 +508,7 @@ class _PdfAnnotateProgressPageState extends State<PdfAnnotateProgressPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Type your notes, comments, or review feedback:',
+              'Anchored to text. Enter your notes or review feedback:',
               style: TextStyle(fontSize: 13, color: Colors.grey),
             ),
             const SizedBox(height: 12),
@@ -522,17 +561,16 @@ class _PdfAnnotateProgressPageState extends State<PdfAnnotateProgressPage> {
           }
         } else {
           final noteId = 'note_${DateTime.now().microsecondsSinceEpoch}';
-          // Note size: ~18% width, ~10% height relative to page
+          // Place the note card slightly offset to avoid obscuring the anchored text
+          final noteRelX = (relativeAnchorPoint.dx + 0.05).clamp(0.01, 0.80);
+          final noteRelY = (relativeAnchorPoint.dy - 0.08).clamp(0.01, 0.88);
+
           _annotations.add(AnnotationItem(
             id: noteId,
             pageIndex: _currentPage - 1,
             tool: AnnotationToolType.note,
-            relativeRect: Rect.fromLTWH(
-              (relativePoint.dx - 0.09).clamp(0.01, 0.80),
-              (relativePoint.dy - 0.05).clamp(0.01, 0.88),
-              0.18,
-              0.10,
-            ),
+            anchorPoint: relativeAnchorPoint,
+            relativeRect: Rect.fromLTWH(noteRelX, noteRelY, 0.18, 0.10),
             color: _activeColor,
             content: noteText,
           ));
@@ -542,78 +580,14 @@ class _PdfAnnotateProgressPageState extends State<PdfAnnotateProgressPage> {
     }
   }
 
-  void _showCustomColorPickerDialog() {
-    final List<Color> customColors = [
-      const Color(0xFFFEF08A), const Color(0xFFFDE047), const Color(0xFFFACC15), const Color(0xFFEAB308),
-      const Color(0xFFBBF7D0), const Color(0xFF86EFAC), const Color(0xFF4ADE80), const Color(0xFF22C55E),
-      const Color(0xFFBAE6FD), const Color(0xFF7DD3FC), const Color(0xFF38BDF8), const Color(0xFF0EA5E9),
-      const Color(0xFFFBCFE8), const Color(0xFFF472B6), const Color(0xFFEC4899), const Color(0xFFDB2777),
-      const Color(0xFFFECACA), const Color(0xFFFCA5A5), const Color(0xFFF87171), const Color(0xFFEF4444),
-      const Color(0xFFE9D5FF), const Color(0xFFC084FC), const Color(0xFFA855F7), const Color(0xFF9333EA),
-      const Color(0xFFFED7AA), const Color(0xFFFDBA74), const Color(0xFFFB923C), const Color(0xFFF97316),
-      const Color(0xFFE2E8F0), const Color(0xFF94A3B8), const Color(0xFF64748B), const Color(0xFF334155),
-    ];
-
+  void _showFreeColorPickerDialog() {
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
-          children: [
-            Icon(Icons.palette_rounded, color: Color(0xFFD97706)),
-            SizedBox(width: 8),
-            Text('Select Custom Color', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-          ],
-        ),
-        content: SizedBox(
-          width: 320,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Pick a color for your annotations:', style: TextStyle(fontSize: 13, color: Colors.grey)),
-              const SizedBox(height: 16),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: customColors.map((c) {
-                  final isCurrent = _activeColor == c;
-                  return InkWell(
-                    onTap: () {
-                      _updateSelectedAnnotationColor(c);
-                      Navigator.of(ctx).pop();
-                    },
-                    borderRadius: BorderRadius.circular(20),
-                    child: Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        color: c,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: isCurrent ? Colors.black : Colors.black12,
-                          width: isCurrent ? 2.5 : 1,
-                        ),
-                        boxShadow: isCurrent
-                            ? [BoxShadow(color: c.withOpacity(0.6), blurRadius: 6, spreadRadius: 1)]
-                            : null,
-                      ),
-                      child: isCurrent
-                          ? const Icon(Icons.check, size: 16, color: Colors.black87)
-                          : null,
-                    ),
-                  );
-                }).toList(),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Close'),
-          ),
-        ],
+      builder: (ctx) => FreeColorPickerDialog(
+        initialColor: _activeColor,
+        onColorSelected: (c) {
+          _updateSelectedAnnotationColor(c);
+        },
       ),
     );
   }
@@ -922,18 +896,26 @@ class _PdfAnnotateProgressPageState extends State<PdfAnnotateProgressPage> {
             ),
             const SizedBox(width: 3),
 
+            // Underline Thickness Quick Toggles
+            if (_activeTool == AnnotationToolType.underline) ...[
+              _buildStrokeWidthPill(1.5, 'Thin', isDark),
+              _buildStrokeWidthPill(2.5, 'Med', isDark),
+              _buildStrokeWidthPill(4.0, 'Thick', isDark),
+              const SizedBox(width: 3),
+            ],
+
             // Tool: Sticky Note
             _buildToolbarToolItem(
               key: const Key('tool_note_btn'),
               tool: AnnotationToolType.note,
               icon: Icons.sticky_note_2_rounded,
               label: 'Sticky Note',
-              tooltip: 'Add Realistic Sticky Note (N)',
+              tooltip: 'Add Anchored Callout Sticky Note (N)',
               isDark: isDark,
             ),
             _buildToolbarDivider(isDark),
 
-            // Color Swatches (Compact)
+            // Color Swatches & Free Color Picker
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -944,25 +926,31 @@ class _PdfAnnotateProgressPageState extends State<PdfAnnotateProgressPage> {
                 _buildToolbarColorSwatch(const Color(0xFF7DD3FC), const Key('color_palette_cyan')),
                 const SizedBox(width: 4),
                 _buildToolbarColorSwatch(const Color(0xFFF472B6), const Key('color_palette_pink')),
-                const SizedBox(width: 4),
-                // Custom Color Picker Button
-                InkWell(
-                  onTap: _showCustomColorPickerDialog,
-                  borderRadius: BorderRadius.circular(14),
-                  child: Container(
-                    width: 20,
-                    height: 20,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.grey.shade400),
-                      gradient: const SweepGradient(
-                        colors: [
-                          Colors.red, Colors.yellow, Colors.green,
-                          Colors.cyan, Colors.blue, Colors.purple, Colors.red,
+                const SizedBox(width: 5),
+                // Continuous Free Color Picker Button
+                Tooltip(
+                  message: 'Free Color Picker (Full Spectrum)',
+                  child: InkWell(
+                    onTap: _showFreeColorPickerDialog,
+                    borderRadius: BorderRadius.circular(14),
+                    child: Container(
+                      width: 22,
+                      height: 22,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.grey.shade400, width: 1.2),
+                        gradient: const SweepGradient(
+                          colors: [
+                            Colors.red, Colors.amber, Colors.green,
+                            Colors.cyan, Colors.blue, Colors.purple, Colors.red,
+                          ],
+                        ),
+                        boxShadow: const [
+                          BoxShadow(color: Colors.black12, blurRadius: 3, offset: Offset(0, 1)),
                         ],
                       ),
+                      child: const Icon(Icons.colorize_rounded, size: 12, color: Colors.white),
                     ),
-                    child: const Icon(Icons.colorize_rounded, size: 11, color: Colors.white),
                   ),
                 ),
               ],
@@ -1020,6 +1008,35 @@ class _PdfAnnotateProgressPageState extends State<PdfAnnotateProgressPage> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStrokeWidthPill(double width, String label, bool isDark) {
+    final isSelected = (_activeStrokeWidth - width).abs() < 0.1;
+
+    return InkWell(
+      onTap: () => _updateStrokeWidth(width),
+      borderRadius: BorderRadius.circular(4),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
+        margin: const EdgeInsets.symmetric(horizontal: 1.5),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFFD97706).withOpacity(0.2) : Colors.transparent,
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(
+            color: isSelected ? const Color(0xFFD97706) : Colors.transparent,
+            width: 1,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 10.5,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            color: isSelected ? const Color(0xFFD97706) : (isDark ? Colors.white70 : Colors.black87),
+          ),
         ),
       ),
     );
@@ -1099,10 +1116,10 @@ class _PdfAnnotateProgressPageState extends State<PdfAnnotateProgressPage> {
     return InkWell(
       key: key,
       onTap: () => _updateSelectedAnnotationColor(color),
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(14),
       child: Container(
-        width: 24,
-        height: 24,
+        width: 20,
+        height: 20,
         decoration: BoxDecoration(
           color: color,
           shape: BoxShape.circle,
@@ -1115,7 +1132,7 @@ class _PdfAnnotateProgressPageState extends State<PdfAnnotateProgressPage> {
               : null,
         ),
         child: isCurrent
-            ? const Icon(Icons.check, size: 14, color: Colors.black87)
+            ? const Icon(Icons.check, size: 12, color: Colors.black87)
             : null,
       ),
     );
@@ -1208,33 +1225,65 @@ class _PdfAnnotateProgressPageState extends State<PdfAnnotateProgressPage> {
                           if (_drawStart != null && _drawCurrent != null) {
                             final p0 = _drawStart!;
                             final p1 = _drawCurrent!;
-                            final left = math.min(p0.dx, p1.dx) / displayW;
-                            final top = math.min(p0.dy, p1.dy) / displayH;
-                            final right = math.max(p0.dx, p1.dx) / displayW;
-                            final bottom = math.max(p0.dy, p1.dy) / displayH;
 
-                            final w = right - left;
-                            final h = bottom - top;
+                            if (_activeTool == AnnotationToolType.underline) {
+                              // Underline: strictly horizontal span + stroke thickness
+                              final left = math.min(p0.dx, p1.dx) / displayW;
+                              final right = math.max(p0.dx, p1.dx) / displayW;
+                              final w = right - left;
+                              final y = p0.dy / displayH;
 
-                            if (w > 0.005 && h > 0.003) {
-                              _pushSnapshot();
-                              final newId = 'annot_${DateTime.now().microsecondsSinceEpoch}';
-                              setState(() {
-                                _annotations.add(AnnotationItem(
-                                  id: newId,
-                                  pageIndex: _currentPage - 1,
-                                  tool: _activeTool,
-                                  relativeRect: Rect.fromLTRB(
-                                    left.clamp(0.0, 1.0),
-                                    top.clamp(0.0, 1.0),
-                                    right.clamp(0.0, 1.0),
-                                    bottom.clamp(0.0, 1.0),
-                                  ),
-                                  color: _activeColor,
-                                ));
-                                _selectedAnnotationId = newId;
-                              });
+                              if (w > 0.005) {
+                                _pushSnapshot();
+                                final newId = 'annot_${DateTime.now().microsecondsSinceEpoch}';
+                                setState(() {
+                                  _annotations.add(AnnotationItem(
+                                    id: newId,
+                                    pageIndex: _currentPage - 1,
+                                    tool: AnnotationToolType.underline,
+                                    relativeRect: Rect.fromLTWH(
+                                      left.clamp(0.0, 1.0),
+                                      y.clamp(0.0, 1.0),
+                                      w.clamp(0.001, 1.0),
+                                      _activeStrokeWidth / displayH,
+                                    ),
+                                    color: _activeColor,
+                                    strokeThickness: _activeStrokeWidth,
+                                  ));
+                                  _selectedAnnotationId = newId;
+                                });
+                              }
+                            } else {
+                              // Highlight: 2D text bounding area
+                              final left = math.min(p0.dx, p1.dx) / displayW;
+                              final top = math.min(p0.dy, p1.dy) / displayH;
+                              final right = math.max(p0.dx, p1.dx) / displayW;
+                              final bottom = math.max(p0.dy, p1.dy) / displayH;
+
+                              final w = right - left;
+                              final h = bottom - top;
+
+                              if (w > 0.005 && h > 0.003) {
+                                _pushSnapshot();
+                                final newId = 'annot_${DateTime.now().microsecondsSinceEpoch}';
+                                setState(() {
+                                  _annotations.add(AnnotationItem(
+                                    id: newId,
+                                    pageIndex: _currentPage - 1,
+                                    tool: AnnotationToolType.highlight,
+                                    relativeRect: Rect.fromLTRB(
+                                      left.clamp(0.0, 1.0),
+                                      top.clamp(0.0, 1.0),
+                                      right.clamp(0.0, 1.0),
+                                      bottom.clamp(0.0, 1.0),
+                                    ),
+                                    color: _activeColor,
+                                  ));
+                                  _selectedAnnotationId = newId;
+                                });
+                              }
                             }
+
                             setState(() {
                               _drawStart = null;
                               _drawCurrent = null;
@@ -1248,6 +1297,29 @@ class _PdfAnnotateProgressPageState extends State<PdfAnnotateProgressPage> {
                             Positioned.fill(
                               child: _buildFullPageBackground(displayW, displayH),
                             ),
+
+                            // Callout Connector Leader Lines (under the notes)
+                            ..._annotations
+                                .where((a) => a.pageIndex == _currentPage - 1 && a.tool == AnnotationToolType.note && a.anchorPoint != null)
+                                .map((a) => Positioned.fill(
+                                      child: CustomPaint(
+                                        painter: CalloutLeaderPainter(
+                                          anchorPoint: Offset(a.anchorPoint!.dx * displayW, a.anchorPoint!.dy * displayH),
+                                          noteRect: Rect.fromLTWH(
+                                            a.relativeRect.left * displayW,
+                                            a.relativeRect.top * displayH,
+                                            math.max(140.0 * _zoom, 90.0),
+                                            math.max(105.0 * _zoom, 75.0),
+                                          ),
+                                          color: a.color,
+                                        ),
+                                      ),
+                                    )),
+
+                            // Draggable Anchor Points for Selected Notes
+                            ..._annotations
+                                .where((a) => a.pageIndex == _currentPage - 1 && a.tool == AnnotationToolType.note && a.anchorPoint != null && a.id == _selectedAnnotationId)
+                                .map((a) => _buildDraggableAnchorPoint(a, displayW, displayH)),
 
                             // Existing Annotations Scaled to Current Zoom
                             ..._annotations
@@ -1306,6 +1378,68 @@ class _PdfAnnotateProgressPageState extends State<PdfAnnotateProgressPage> {
     );
   }
 
+  Widget _buildDraggableAnchorPoint(AnnotationItem item, double canvasW, double canvasH) {
+    final anchor = item.anchorPoint!;
+    final px = anchor.dx * canvasW;
+    final py = anchor.dy * canvasH;
+
+    return Positioned(
+      left: px - 12,
+      top: py - 12,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.precise,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onPanStart: (details) {
+            _pushSnapshot();
+            _anchorMoveStartGlobal = details.globalPosition;
+            _anchorInitialOffset = item.anchorPoint;
+          },
+          onPanUpdate: (details) {
+            if (_anchorMoveStartGlobal != null && _anchorInitialOffset != null) {
+              final delta = details.globalPosition - _anchorMoveStartGlobal!;
+              final newDx = (_anchorInitialOffset!.dx + (delta.dx / canvasW)).clamp(0.01, 0.99);
+              final newDy = (_anchorInitialOffset!.dy + (delta.dy / canvasH)).clamp(0.01, 0.99);
+
+              final idx = _annotations.indexWhere((a) => a.id == item.id);
+              if (idx != -1) {
+                setState(() {
+                  _annotations[idx] = item.copyWith(anchorPoint: Offset(newDx, newDy));
+                });
+              }
+            }
+          },
+          onPanEnd: (_) {
+            _anchorMoveStartGlobal = null;
+            _anchorInitialOffset = null;
+          },
+          child: Tooltip(
+            message: 'Drag to re-anchor callout to text',
+            child: Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                color: const Color(0xFF2563EB).withOpacity(0.2),
+                shape: BoxShape.circle,
+                border: Border.all(color: const Color(0xFF2563EB), width: 1.5),
+              ),
+              child: Center(
+                child: Container(
+                  width: 8,
+                  height: 8,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF2563EB),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildRenderedAnnotation(AnnotationItem item, double canvasW, double canvasH) {
     final isSelected = _selectedAnnotationId == item.id;
 
@@ -1313,6 +1447,11 @@ class _PdfAnnotateProgressPageState extends State<PdfAnnotateProgressPage> {
       return _buildRealisticPostItNote(item, canvasW, canvasH, isSelected);
     }
 
+    if (item.tool == AnnotationToolType.underline) {
+      return _buildUnderlineAnnotation(item, canvasW, canvasH, isSelected);
+    }
+
+    // Highlight annotation
     final rect = Rect.fromLTRB(
       item.relativeRect.left * canvasW,
       item.relativeRect.top * canvasH,
@@ -1371,18 +1510,10 @@ class _PdfAnnotateProgressPageState extends State<PdfAnnotateProgressPage> {
             clipBehavior: Clip.none,
             children: [
               Positioned.fill(
-                child: item.tool == AnnotationToolType.highlight
-                    ? Container(color: item.color.withOpacity(0.40))
-                    : Align(
-                        alignment: Alignment.bottomCenter,
-                        child: Container(
-                          height: 3 * _zoom,
-                          color: item.color,
-                        ),
-                      ),
+                child: Container(color: item.color.withOpacity(0.40)),
               ),
 
-              // Selection Border with Corner Handles & Delete Pill
+              // Selection Border with Corner Handles
               if (isSelected)
                 Positioned.fill(
                   child: Container(
@@ -1398,25 +1529,24 @@ class _PdfAnnotateProgressPageState extends State<PdfAnnotateProgressPage> {
                 Positioned(left: -4, bottom: -4, child: _buildSelectionHandle()),
                 Positioned(right: -4, bottom: -4, child: _buildSelectionHandle()),
 
-                // Quick Action Delete Pill
+                // Working Top-Right Red Cross Delete Button
                 Positioned(
                   right: -8,
-                  top: -28,
-                  child: Material(
-                    elevation: 3,
-                    borderRadius: BorderRadius.circular(12),
-                    color: Colors.white,
-                    child: InkWell(
-                      onTap: _deleteSelectedAnnotation,
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: Colors.red.shade50,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.red.shade300),
-                        ),
-                        child: const Icon(Icons.close_rounded, size: 14, color: Colors.red),
+                  top: -8,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => _deleteAnnotation(item.id),
+                    child: Container(
+                      width: 18,
+                      height: 18,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEF4444),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 1.5),
+                        boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)],
+                      ),
+                      child: const Center(
+                        child: Icon(Icons.close_rounded, size: 11, color: Colors.white),
                       ),
                     ),
                   ),
@@ -1429,40 +1559,28 @@ class _PdfAnnotateProgressPageState extends State<PdfAnnotateProgressPage> {
     );
   }
 
-  Widget _buildSelectionHandle() {
-    return Container(
-      width: 8,
-      height: 8,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        shape: BoxShape.circle,
-        border: Border.all(color: const Color(0xFF2563EB), width: 1.5),
-      ),
-    );
-  }
-
-  Widget _buildRealisticPostItNote(AnnotationItem item, double canvasW, double canvasH, bool isSelected) {
+  Widget _buildUnderlineAnnotation(AnnotationItem item, double canvasW, double canvasH, bool isSelected) {
     final left = item.relativeRect.left * canvasW;
     final top = item.relativeRect.top * canvasH;
-    final noteW = math.max(140.0 * _zoom, 90.0);
-    final noteH = math.max(105.0 * _zoom, 75.0);
+    final width = item.relativeRect.width * canvasW;
+    final strokeH = math.max(1.5, item.strokeThickness * _zoom);
 
     return Positioned(
       left: left,
       top: top,
-      width: noteW,
-      height: noteH,
+      width: width,
+      height: math.max(strokeH, 16.0), // Hit area for easy interaction
       child: MouseRegion(
-        cursor: SystemMouseCursors.move,
+        cursor: isSelected ? SystemMouseCursors.move : SystemMouseCursors.click,
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: () {
             setState(() {
               _selectedAnnotationId = item.id;
               _activeColor = item.color;
+              _activeStrokeWidth = item.strokeThickness;
             });
           },
-          onDoubleTap: () => _promptStickyNoteDialog(Offset.zero, existing: item),
           onPanStart: (details) {
             _pushSnapshot();
             setState(() {
@@ -1498,118 +1616,265 @@ class _PdfAnnotateProgressPageState extends State<PdfAnnotateProgressPage> {
               _moveInitialRect = null;
             });
           },
-          child: Container(
-            decoration: BoxDecoration(
-              color: item.color,
-              borderRadius: BorderRadius.circular(3),
-              border: Border.all(
-                color: isSelected ? const Color(0xFF2563EB) : Colors.black12,
-                width: isSelected ? 2.0 : 0.8,
+          child: Stack(
+            clipBehavior: Clip.none,
+            alignment: Alignment.centerLeft,
+            children: [
+              // Underline stroke: strictly width + stroke thickness
+              Container(
+                width: width,
+                height: strokeH,
+                decoration: BoxDecoration(
+                  color: item.color,
+                  borderRadius: BorderRadius.circular(strokeH / 2),
+                ),
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.18),
-                  blurRadius: 10 * _zoom,
-                  spreadRadius: 1,
-                  offset: Offset(3 * _zoom, 5 * _zoom),
+
+              // Selection Highlight
+              if (isSelected)
+                Positioned(
+                  left: -2,
+                  top: 0,
+                  right: -2,
+                  bottom: 0,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: const Color(0xFF2563EB), width: 1.5),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
                 ),
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
-                  blurRadius: 2 * _zoom,
-                  offset: const Offset(0, 1),
-                ),
-              ],
-            ),
-            child: Stack(
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Top Adhesive Strip
-                    Container(
-                      height: 18 * _zoom,
-                      padding: EdgeInsets.symmetric(horizontal: 6 * _zoom),
+
+              // Top-Right Red Cross Delete Action
+              if (isSelected)
+                Positioned(
+                  right: -8,
+                  top: -8,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => _deleteAnnotation(item.id),
+                    child: Container(
+                      width: 18,
+                      height: 18,
                       decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.06),
-                        borderRadius: const BorderRadius.vertical(top: Radius.circular(2)),
+                        color: const Color(0xFFEF4444),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 1.5),
+                        boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)],
                       ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.push_pin_rounded, size: 11 * _zoom, color: Colors.black54),
-                              SizedBox(width: 4 * _zoom),
-                              Text(
-                                'Note',
-                                style: TextStyle(
-                                  fontSize: 10 * _zoom,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black54,
-                                ),
-                              ),
-                            ],
-                          ),
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              InkWell(
-                                onTap: () => _promptStickyNoteDialog(Offset.zero, existing: item),
-                                child: Icon(Icons.edit_rounded, size: 12 * _zoom, color: Colors.black54),
-                              ),
-                              SizedBox(width: 4 * _zoom),
-                              InkWell(
-                                onTap: () {
-                                  _pushSnapshot();
-                                  setState(() {
-                                    _annotations.removeWhere((a) => a.id == item.id);
-                                    if (_selectedAnnotationId == item.id) {
-                                      _selectedAnnotationId = null;
-                                    }
-                                  });
-                                },
-                                child: Icon(Icons.close_rounded, size: 12 * _zoom, color: Colors.black54),
-                              ),
-                            ],
-                          ),
-                        ],
+                      child: const Center(
+                        child: Icon(Icons.close_rounded, size: 11, color: Colors.white),
                       ),
                     ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
-                    // Post-It Note Content
-                    Expanded(
-                      child: Padding(
-                        padding: EdgeInsets.all(8 * _zoom),
-                        child: Text(
-                          item.content.isEmpty ? 'Tap to add note text...' : item.content,
-                          style: TextStyle(
-                            fontSize: 11.5 * _zoom,
-                            height: 1.3,
-                            color: const Color(0xFF1F2937),
-                            fontWeight: FontWeight.w500,
+  Widget _buildSelectionHandle() {
+    return Container(
+      width: 8,
+      height: 8,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        shape: BoxShape.circle,
+        border: Border.all(color: const Color(0xFF2563EB), width: 1.5),
+      ),
+    );
+  }
+
+  Widget _buildRealisticPostItNote(AnnotationItem item, double canvasW, double canvasH, bool isSelected) {
+    final left = item.relativeRect.left * canvasW;
+    final top = item.relativeRect.top * canvasH;
+    final noteW = math.max(140.0 * _zoom, 90.0);
+    final noteH = math.max(105.0 * _zoom, 75.0);
+
+    return Positioned(
+      left: left,
+      top: top,
+      width: noteW,
+      height: noteH,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          // Card Body & Pan Drag Handler
+          MouseRegion(
+            cursor: SystemMouseCursors.move,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () {
+                setState(() {
+                  _selectedAnnotationId = item.id;
+                  _activeColor = item.color;
+                });
+              },
+              onDoubleTap: () => _promptStickyNoteDialog(Offset.zero, existing: item),
+              onPanStart: (details) {
+                _pushSnapshot();
+                setState(() {
+                  _selectedAnnotationId = item.id;
+                  _moveStartGlobal = details.globalPosition;
+                  _moveInitialRect = item.relativeRect;
+                });
+              },
+              onPanUpdate: (details) {
+                if (_moveStartGlobal != null && _moveInitialRect != null) {
+                  final delta = details.globalPosition - _moveStartGlobal!;
+                  final deltaRelX = delta.dx / canvasW;
+                  final deltaRelY = delta.dy / canvasH;
+
+                  final w = _moveInitialRect!.width;
+                  final h = _moveInitialRect!.height;
+                  final newLeft = (_moveInitialRect!.left + deltaRelX).clamp(0.0, 1.0 - w);
+                  final newTop = (_moveInitialRect!.top + deltaRelY).clamp(0.0, 1.0 - h);
+
+                  final idx = _annotations.indexWhere((a) => a.id == item.id);
+                  if (idx != -1) {
+                    setState(() {
+                      _annotations[idx] = item.copyWith(
+                        relativeRect: Rect.fromLTWH(newLeft, newTop, w, h),
+                      );
+                    });
+                  }
+                }
+              },
+              onPanEnd: (_) {
+                setState(() {
+                  _moveStartGlobal = null;
+                  _moveInitialRect = null;
+                });
+              },
+              child: Container(
+                decoration: BoxDecoration(
+                  color: item.color,
+                  borderRadius: BorderRadius.circular(3),
+                  border: Border.all(
+                    color: isSelected ? const Color(0xFF2563EB) : Colors.black12,
+                    width: isSelected ? 2.0 : 0.8,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.18),
+                      blurRadius: 10 * _zoom,
+                      spreadRadius: 1,
+                      offset: Offset(3 * _zoom, 5 * _zoom),
+                    ),
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.08),
+                      blurRadius: 2 * _zoom,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
+                ),
+                child: Stack(
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Top Adhesive Strip
+                        Container(
+                          height: 18 * _zoom,
+                          padding: EdgeInsets.symmetric(horizontal: 6 * _zoom),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.06),
+                            borderRadius: const BorderRadius.vertical(top: Radius.circular(2)),
                           ),
-                          maxLines: 4,
-                          overflow: TextOverflow.ellipsis,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.push_pin_rounded, size: 11 * _zoom, color: Colors.black54),
+                                  SizedBox(width: 4 * _zoom),
+                                  Text(
+                                    'Note',
+                                    style: TextStyle(
+                                      fontSize: 10 * _zoom,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black54,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  InkWell(
+                                    onTap: () => _promptStickyNoteDialog(Offset.zero, existing: item),
+                                    child: Icon(Icons.edit_rounded, size: 12 * _zoom, color: Colors.black54),
+                                  ),
+                                  SizedBox(width: 4 * _zoom),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
+
+                        // Post-It Note Content
+                        Expanded(
+                          child: Padding(
+                            padding: EdgeInsets.all(8 * _zoom),
+                            child: Text(
+                              item.content.isEmpty ? 'Tap to add note text...' : item.content,
+                              style: TextStyle(
+                                fontSize: 11.5 * _zoom,
+                                height: 1.3,
+                                color: const Color(0xFF1F2937),
+                                fontWeight: FontWeight.w500,
+                              ),
+                              maxLines: 4,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    // Folded Corner Dog-Ear
+                    Positioned(
+                      right: 0,
+                      bottom: 0,
+                      child: CustomPaint(
+                        size: Size(14 * _zoom, 14 * _zoom),
+                        painter: DogEarPainter(noteColor: item.color, size: 14 * _zoom),
                       ),
                     ),
                   ],
                 ),
-
-                // Folded Corner Dog-Ear
-                Positioned(
-                  right: 0,
-                  bottom: 0,
-                  child: CustomPaint(
-                    size: Size(14 * _zoom, 14 * _zoom),
-                    painter: DogEarPainter(noteColor: item.color, size: 14 * _zoom),
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
-        ),
+
+          // Working Top-Right Red Cross Delete Action
+          Positioned(
+            right: -6,
+            top: -6,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => _deleteAnnotation(item.id),
+              child: Container(
+                width: 20,
+                height: 20,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEF4444),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 1.5),
+                  boxShadow: const [
+                    BoxShadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 1)),
+                  ],
+                ),
+                child: const Center(
+                  child: Icon(Icons.close_rounded, size: 12, color: Colors.white),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1617,6 +1882,31 @@ class _PdfAnnotateProgressPageState extends State<PdfAnnotateProgressPage> {
   Widget _buildActiveDrawPreview() {
     final p0 = _drawStart!;
     final p1 = _drawCurrent!;
+
+    if (_activeTool == AnnotationToolType.underline) {
+      // Underline preview: strictly width + stroke thickness
+      final left = math.min(p0.dx, p1.dx);
+      final width = (p1.dx - p0.dx).abs();
+      final strokeH = math.max(1.5, _activeStrokeWidth * _zoom);
+
+      return Positioned(
+        left: left,
+        top: p0.dy,
+        width: width,
+        height: strokeH,
+        child: Container(
+          decoration: BoxDecoration(
+            color: _activeColor,
+            borderRadius: BorderRadius.circular(strokeH / 2),
+            boxShadow: [
+              BoxShadow(color: _activeColor.withOpacity(0.5), blurRadius: 4),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Highlight preview
     final left = math.min(p0.dx, p1.dx);
     final top = math.min(p0.dy, p1.dy);
     final w = (p1.dx - p0.dx).abs();
@@ -1629,12 +1919,10 @@ class _PdfAnnotateProgressPageState extends State<PdfAnnotateProgressPage> {
       height: h,
       child: Container(
         decoration: BoxDecoration(
-          color: _activeTool == AnnotationToolType.highlight
-              ? _activeColor.withOpacity(0.4)
-              : Colors.transparent,
+          color: _activeColor.withOpacity(0.4),
           border: Border.all(
             color: _activeColor,
-            width: _activeTool == AnnotationToolType.underline ? 2.5 : 1.5,
+            width: 1.5,
           ),
         ),
       ),
@@ -1668,7 +1956,7 @@ class _PdfAnnotateProgressPageState extends State<PdfAnnotateProgressPage> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Your high-precision annotations and sticky notes have been stamped with ISO 32000 standard markup.',
+            'Your high-precision annotations and anchored callouts have been stamped with ISO 32000 standard markup.',
             style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600]),
           ),
           const SizedBox(height: 24),
@@ -1719,6 +2007,85 @@ class _PdfAnnotateProgressPageState extends State<PdfAnnotateProgressPage> {
   }
 }
 
+class CalloutLeaderPainter extends CustomPainter {
+  final Offset anchorPoint; // In canvas coordinates
+  final Rect noteRect; // In canvas coordinates
+  final Color color;
+
+  CalloutLeaderPainter({
+    required this.anchorPoint,
+    required this.noteRect,
+    required this.color,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    // 1. Draw Anchor Pin Dot at anchorPoint on the text
+    final haloPaint = Paint()
+      ..color = color.withOpacity(0.35)
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(anchorPoint, 7, haloPaint);
+
+    final dotPaint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(anchorPoint, 3.5, dotPaint);
+
+    final dotBorderPaint = Paint()
+      ..color = Colors.black87
+      ..strokeWidth = 1.0
+      ..style = PaintingStyle.stroke;
+    canvas.drawCircle(anchorPoint, 3.5, dotBorderPaint);
+
+    // 2. Find closest attachment point on note border
+    double targetX = anchorPoint.dx.clamp(noteRect.left, noteRect.right);
+    double targetY = anchorPoint.dy.clamp(noteRect.top, noteRect.bottom);
+
+    if (anchorPoint.dx < noteRect.left) {
+      targetX = noteRect.left;
+      targetY = noteRect.top + noteRect.height * 0.35;
+    } else if (anchorPoint.dx > noteRect.right) {
+      targetX = noteRect.right;
+      targetY = noteRect.top + noteRect.height * 0.35;
+    } else if (anchorPoint.dy < noteRect.top) {
+      targetY = noteRect.top;
+    } else {
+      targetY = noteRect.bottom;
+    }
+
+    final targetPoint = Offset(targetX, targetY);
+
+    // 3. Draw smooth callout leader curve
+    final shadowPaint = Paint()
+      ..color = Colors.black.withOpacity(0.12)
+      ..strokeWidth = 3.0
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+
+    final linePaint = Paint()
+      ..color = color.withOpacity(0.95)
+      ..strokeWidth = 2.0
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+
+    final midX = (anchorPoint.dx + targetPoint.dx) / 2;
+    final control = Offset(midX, anchorPoint.dy);
+
+    final path = Path()
+      ..moveTo(anchorPoint.dx, anchorPoint.dy)
+      ..quadraticBezierTo(control.dx, control.dy, targetPoint.dx, targetPoint.dy);
+
+    canvas.drawPath(path, shadowPaint);
+    canvas.drawPath(path, linePaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CalloutLeaderPainter oldDelegate) =>
+      oldDelegate.anchorPoint != anchorPoint ||
+      oldDelegate.noteRect != noteRect ||
+      oldDelegate.color != color;
+}
+
 class DogEarPainter extends CustomPainter {
   final Color noteColor;
   final double size;
@@ -1754,4 +2121,257 @@ class DogEarPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant DogEarPainter oldDelegate) =>
       oldDelegate.noteColor != noteColor || oldDelegate.size != size;
+}
+
+/// Continuous Free Color Picker across 16-million spectrum
+class FreeColorPickerDialog extends StatefulWidget {
+  final Color initialColor;
+  final ValueChanged<Color> onColorSelected;
+
+  const FreeColorPickerDialog({
+    super.key,
+    required this.initialColor,
+    required this.onColorSelected,
+  });
+
+  @override
+  State<FreeColorPickerDialog> createState() => _FreeColorPickerDialogState();
+}
+
+class _FreeColorPickerDialogState extends State<FreeColorPickerDialog> {
+  late HSVColor _hsvColor;
+  late TextEditingController _hexController;
+
+  @override
+  void initState() {
+    super.initState();
+    _hsvColor = HSVColor.fromColor(widget.initialColor);
+    _hexController = TextEditingController(text: _toHex(_hsvColor.toColor()));
+  }
+
+  @override
+  void dispose() {
+    _hexController.dispose();
+    super.dispose();
+  }
+
+  String _toHex(Color c) {
+    return '#${c.value.toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}';
+  }
+
+  void _onHexChanged(String val) {
+    final clean = val.replaceAll('#', '').trim();
+    if (clean.length == 6) {
+      final parsed = int.tryParse('FF$clean', radix: 16);
+      if (parsed != null) {
+        setState(() {
+          _hsvColor = HSVColor.fromColor(Color(parsed));
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final currentColor = _hsvColor.toColor();
+
+    return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: const Row(
+        children: [
+          Icon(Icons.palette_rounded, color: Color(0xFFD97706)),
+          SizedBox(width: 8),
+          Text('Free Color Picker', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        ],
+      ),
+      content: SizedBox(
+        width: 320,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // 2D Saturation-Value Continuous Field
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: SizedBox(
+                height: 160,
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final boxW = constraints.maxWidth;
+                    final boxH = constraints.maxHeight;
+
+                    return GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onPanDown: (details) => _updateSV(details.localPosition, boxW, boxH),
+                      onPanUpdate: (details) => _updateSV(details.localPosition, boxW, boxH),
+                      child: Stack(
+                        children: [
+                          // Base Hue
+                          Container(
+                            color: HSVColor.fromAHSV(1.0, _hsvColor.hue, 1.0, 1.0).toColor(),
+                          ),
+                          // Horizontal White Gradient
+                          Container(
+                            decoration: const BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [Colors.white, Colors.transparent],
+                                begin: Alignment.centerLeft,
+                                end: Alignment.centerRight,
+                              ),
+                            ),
+                          ),
+                          // Vertical Black Gradient
+                          Container(
+                            decoration: const BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [Colors.transparent, Colors.black],
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                              ),
+                            ),
+                          ),
+                          // Crosshair Indicator
+                          Positioned(
+                            left: (_hsvColor.saturation * boxW - 8).clamp(0.0, boxW - 16),
+                            top: ((1.0 - _hsvColor.value) * boxH - 8).clamp(0.0, boxH - 16),
+                            child: Container(
+                              width: 16,
+                              height: 16,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white, width: 2),
+                                boxShadow: const [
+                                  BoxShadow(color: Colors.black45, blurRadius: 4),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+
+            // Continuous Rainbow Hue Bar
+            SizedBox(
+              height: 24,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final barW = constraints.maxWidth;
+
+                  return GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onPanDown: (details) => _updateHue(details.localPosition.dx, barW),
+                    onPanUpdate: (details) => _updateHue(details.localPosition.dx, barW),
+                    child: Stack(
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            gradient: const LinearGradient(
+                              colors: [
+                                Color(0xFFFF0000), Color(0xFFFFFF00), Color(0xFF00FF00),
+                                Color(0xFF00FFFF), Color(0xFF0000FF), Color(0xFFFF00FF), Color(0xFFFF0000),
+                              ],
+                            ),
+                          ),
+                        ),
+                        // Hue Slider Knob
+                        Positioned(
+                          left: ((_hsvColor.hue / 360.0) * barW - 10).clamp(0.0, barW - 20),
+                          top: 2,
+                          bottom: 2,
+                          child: Container(
+                            width: 20,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.black45, width: 1.5),
+                              boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 3)],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Live Preview & Hex Input
+            Row(
+              children: [
+                // Color Preview Box
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: currentColor,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.black26),
+                    boxShadow: [
+                      BoxShadow(color: currentColor.withOpacity(0.4), blurRadius: 6, offset: const Offset(0, 2)),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextField(
+                    controller: _hexController,
+                    onChanged: _onHexChanged,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    decoration: InputDecoration(
+                      labelText: 'Hex Color',
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            widget.onColorSelected(currentColor);
+            Navigator.of(context).pop();
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFFD97706),
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+          child: const Text('Apply Color'),
+        ),
+      ],
+    );
+  }
+
+  void _updateSV(Offset local, double w, double h) {
+    final sat = (local.dx / w).clamp(0.0, 1.0);
+    final val = (1.0 - (local.dy / h)).clamp(0.0, 1.0);
+    setState(() {
+      _hsvColor = _hsvColor.withSaturation(sat).withValue(val);
+      _hexController.text = _toHex(_hsvColor.toColor());
+    });
+  }
+
+  void _updateHue(double dx, double w) {
+    final hue = ((dx / w).clamp(0.0, 1.0) * 360.0).clamp(0.0, 360.0);
+    setState(() {
+      _hsvColor = _hsvColor.withHue(hue);
+      _hexController.text = _toHex(_hsvColor.toColor());
+    });
+  }
 }
