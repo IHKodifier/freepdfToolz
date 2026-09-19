@@ -86,11 +86,10 @@ class FreeOcrApp extends StatelessWidget {
               );
             }
 
-            // Dedicated OCR route -> Sister Site Redirect to freeOCR.me
+            // Dedicated OCR route -> HomePage (with high-fidelity announcement & OCR dropzone)
             if (name == '/ocr') {
-              UrlHelper.openUrl('https://freeocr.me');
               return MaterialPageRoute(
-                builder: (context) => const PdfToolsHubPage(),
+                builder: (context) => const HomePage(),
                 settings: settings,
               );
             }
