@@ -102,11 +102,14 @@ void main() {
       expect(find.byKey(const Key('annotate_next_page_btn')), findsOneWidget);
 
       // Verify Toolbar tool buttons
+      expect(find.byKey(const Key('tool_select_btn')), findsOneWidget);
       expect(find.byKey(const Key('tool_highlight_btn')), findsOneWidget);
       expect(find.byKey(const Key('tool_underline_btn')), findsOneWidget);
-      expect(find.byKey(const Key('tool_strikeout_btn')), findsOneWidget);
-      expect(find.byKey(const Key('tool_box_btn')), findsOneWidget);
       expect(find.byKey(const Key('tool_note_btn')), findsOneWidget);
+
+      // Verify Undo and Redo actions
+      expect(find.byKey(const Key('annotate_undo_btn')), findsOneWidget);
+      expect(find.byKey(const Key('annotate_redo_btn')), findsOneWidget);
 
       // Verify Preview Canvas
       expect(find.byKey(const Key('annotate_preview_canvas')), findsOneWidget);
@@ -149,8 +152,12 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    // Select Box tool
-    await tester.tap(find.byKey(const Key('tool_box_btn')));
+    // Select Sticky Note tool
+    await tester.tap(find.byKey(const Key('tool_note_btn')));
+    await tester.pumpAndSettle();
+
+    // Select Select / Move tool
+    await tester.tap(find.byKey(const Key('tool_select_btn')));
     await tester.pumpAndSettle();
   });
 
