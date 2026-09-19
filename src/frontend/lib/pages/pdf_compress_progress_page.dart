@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import '../widgets/app_header.dart';
 import '../widgets/app_footer.dart';
 import '../widgets/adsense_banner.dart';
@@ -10,6 +9,7 @@ import '../services/telemetry_service.dart';
 import '../services/download_helper.dart';
 import '../services/api_service.dart';
 import '../services/pdf_thumbnail_service.dart';
+import '../widgets/tool_upload_progress_indicator.dart';
 import 'pdf_merge_page.dart' show SelectedPdfFile;
 
 /// Dedicated Status & Progress Page for PDF Compression (/compress/process)
@@ -36,6 +36,9 @@ class _PdfCompressProgressPageState extends State<PdfCompressProgressPage> {
   String _selectedLevel = 'recommended'; // 'recommended', 'extreme', 'low'
 
   bool _isCompressing = false;
+  bool _isUploading = false;
+  int _uploadSentBytes = 0;
+  int _uploadTotalBytes = 0;
   String? _errorMessage;
   PdfThumbnailResult? _thumbnailResult;
   bool _isLoadingThumbnail = false;
@@ -122,28 +125,38 @@ class _PdfCompressProgressPageState extends State<PdfCompressProgressPage> {
 
     setState(() {
       _isCompressing = true;
+      _isUploading = true;
+      _uploadSentBytes = 0;
+      _uploadTotalBytes = _file!.bytes!.length;
       _errorMessage = null;
       _resultBytes = null;
     });
 
     try {
-      final uri = Uri.parse('${ApiService.baseUrl}/tools/compress');
-      final request = http.MultipartRequest('POST', uri);
-
-      request.files.add(
-        http.MultipartFile.fromBytes(
-          'file',
-          _file!.bytes!,
-          filename: _file!.name,
-        ),
+      final response = await ApiService.uploadToolFiles(
+        endpoint: '/tools/compress',
+        files: [
+          UploadFileItem(
+            fieldName: 'file',
+            filename: _file!.name,
+            bytes: _file!.bytes!,
+          ),
+        ],
+        fields: {'level': _selectedLevel},
+        onProgress: (sent, total) {
+          if (mounted) {
+            setState(() {
+              _uploadSentBytes = sent;
+              _uploadTotalBytes = total;
+              if (sent >= total) {
+                _isUploading = false;
+              }
+            });
+          }
+        },
       );
 
-      request.fields['level'] = _selectedLevel;
-
-      final streamedResponse = await request.send();
-      final response = await http.Response.fromStream(streamedResponse);
-
-      if (response.statusCode == 200) {
+      if (response.isSuccess) {
         final cleanBase = _file!.name.replaceAll('.pdf', '');
         String downloadName = '${cleanBase}_compressed.pdf';
 
@@ -168,6 +181,7 @@ class _PdfCompressProgressPageState extends State<PdfCompressProgressPage> {
           _compressedSizeBytes = compSize;
           _percentSaved = pctSaved.clamp(0.0, 100.0);
           _isCompressing = false;
+          _isUploading = false;
         });
 
         TelemetryService.trackEvent('pdf_compress_completed', {
@@ -180,18 +194,22 @@ class _PdfCompressProgressPageState extends State<PdfCompressProgressPage> {
       } else {
         String detail = 'Compression operation failed (HTTP ${response.statusCode})';
         try {
-          final decoded = jsonDecode(response.body);
+          final decoded = jsonDecode(response.bodyString);
           if (decoded['detail'] != null) detail = decoded['detail'];
-        } catch (_) {}
+        } catch (_) {
+          if (response.bodyString.isNotEmpty) detail = response.bodyString;
+        }
         setState(() {
           _errorMessage = detail;
           _isCompressing = false;
+          _isUploading = false;
         });
       }
     } catch (e) {
       setState(() {
         _errorMessage = 'Network error during compression: $e';
         _isCompressing = false;
+        _isUploading = false;
       });
     }
   }
@@ -356,6 +374,15 @@ class _PdfCompressProgressPageState extends State<PdfCompressProgressPage> {
                     ),
                     const SizedBox(height: 28),
 
+                    if (_isCompressing) ...[
+                      ToolUploadProgressIndicator(
+                        sentBytes: _uploadSentBytes,
+                        totalBytes: _uploadTotalBytes,
+                        isUploading: _isUploading,
+                        processingLabel: 'Compressing PDF Document...',
+                      ),
+                    ],
+
                     // Compress Button
                     Center(
                       child: SizedBox(
@@ -374,7 +401,11 @@ class _PdfCompressProgressPageState extends State<PdfCompressProgressPage> {
                                 )
                               : const Icon(Icons.compress_rounded),
                           label: Text(
-                            _isCompressing ? 'Compressing PDF Document...' : 'Compress PDF',
+                            _isCompressing
+                                ? (_isUploading
+                                    ? 'Uploading PDF (${(_uploadTotalBytes > 0 ? (_uploadSentBytes / _uploadTotalBytes * 100).toInt() : 0)}%)...'
+                                    : 'Compressing PDF Document...')
+                                : 'Compress PDF',
                             style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,

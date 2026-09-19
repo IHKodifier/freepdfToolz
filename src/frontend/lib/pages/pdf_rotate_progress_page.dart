@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import '../widgets/app_header.dart';
 import '../widgets/app_footer.dart';
 import '../widgets/adsense_banner.dart';
@@ -10,6 +9,7 @@ import '../services/telemetry_service.dart';
 import '../services/download_helper.dart';
 import '../services/api_service.dart';
 import '../services/pdf_thumbnail_service.dart';
+import '../widgets/tool_upload_progress_indicator.dart';
 import 'pdf_merge_page.dart' show SelectedPdfFile;
 
 /// Dedicated Status & Progress Page for PDF Rotate (/rotate/process)
@@ -32,6 +32,9 @@ class _PdfRotateProgressPageState extends State<PdfRotateProgressPage> {
   int _detectedPages = 1;
   final Map<int, int> _pageRotations = {}; // index -> angle (0, 90, 180, 270)
   bool _isSaving = false;
+  bool _isUploading = false;
+  int _uploadSentBytes = 0;
+  int _uploadTotalBytes = 0;
   String? _errorMessage;
   PdfThumbnailResult? _thumbnailResult;
   bool _isLoadingThumbnails = false;
@@ -146,13 +149,13 @@ class _PdfRotateProgressPageState extends State<PdfRotateProgressPage> {
 
     setState(() {
       _isSaving = true;
+      _isUploading = true;
+      _uploadSentBytes = 0;
+      _uploadTotalBytes = _file!.bytes!.length;
       _errorMessage = null;
     });
 
     try {
-      final uri = Uri.parse('${ApiService.baseUrl}/tools/rotate');
-      final request = http.MultipartRequest('POST', uri);
-
       // Map of string page indices to rotation angles
       final rotationsPayload = <String, int>{};
       _pageRotations.forEach((idx, angle) {
@@ -161,57 +164,65 @@ class _PdfRotateProgressPageState extends State<PdfRotateProgressPage> {
         }
       });
 
-      request.fields['rotations'] = jsonEncode(rotationsPayload);
-      request.files.add(
-        http.MultipartFile.fromBytes(
-          'file',
-          _file!.bytes!,
-          filename: _file!.name,
-        ),
+      final uploadRes = await ApiService.uploadToolFiles(
+        endpoint: '/tools/rotate',
+        fields: {
+          'rotations': jsonEncode(rotationsPayload),
+        },
+        files: [
+          UploadFileItem(
+            field: 'file',
+            filename: _file!.name,
+            bytes: _file!.bytes!,
+          ),
+        ],
+        onProgress: (sent, total) {
+          if (mounted) {
+            setState(() {
+              _uploadSentBytes = sent;
+              _uploadTotalBytes = total;
+              if (sent >= total && total > 0) {
+                _isUploading = false;
+              }
+            });
+          }
+        },
       );
 
-      final streamedResponse = await request.send();
-      final response = await http.Response.fromStream(streamedResponse);
-
-      if (response.statusCode == 200) {
+      if (uploadRes.statusCode == 200) {
         final defaultName = '${_file!.name.replaceAll('.pdf', '')}_rotated.pdf';
-        String downloadName = defaultName;
-        final disposition = response.headers['content-disposition'];
-        if (disposition != null && disposition.contains('filename=')) {
-          final regex = RegExp(r'filename=["' + "'" + r']?([^"' + "'" + r';\r\n]+)');
-          final match = regex.firstMatch(disposition);
-          if (match != null && match.group(1) != null) {
-            downloadName = match.group(1)!.trim();
-          }
-        }
+        final downloadName = uploadRes.filename ?? defaultName;
 
         setState(() {
-          _resultBytes = response.bodyBytes;
+          _resultBytes = uploadRes.bytes;
           _resultFilename = downloadName;
           _isSaving = false;
+          _isUploading = false;
         });
 
         TelemetryService.trackEvent('pdf_rotate_completed', {
           'modified_pages_count': rotationsPayload.length,
           'total_pages': _detectedPages,
-          'output_size_bytes': response.bodyBytes.length,
+          'output_size_bytes': uploadRes.bytes.length,
           'filename': downloadName,
         });
       } else {
-        String detail = 'Rotate operation failed (HTTP ${response.statusCode})';
+        String detail = 'Rotate operation failed (HTTP ${uploadRes.statusCode})';
         try {
-          final decoded = jsonDecode(response.body);
+          final decoded = jsonDecode(utf8.decode(uploadRes.bytes));
           if (decoded['detail'] != null) detail = decoded['detail'];
         } catch (_) {}
         setState(() {
           _errorMessage = detail;
           _isSaving = false;
+          _isUploading = false;
         });
       }
     } catch (e) {
       setState(() {
         _errorMessage = 'Network error during rotate operation: $e';
         _isSaving = false;
+        _isUploading = false;
       });
     }
   }
@@ -648,6 +659,16 @@ class _PdfRotateProgressPageState extends State<PdfRotateProgressPage> {
                         const SizedBox(height: 20),
                       ],
 
+                      if (_isSaving) ...[
+                        ToolUploadProgressIndicator(
+                          isUploading: _isUploading,
+                          sentBytes: _uploadSentBytes,
+                          totalBytes: _uploadTotalBytes,
+                          processingLabel: 'Rotating pages and compiling in RAM disk...',
+                        ),
+                        const SizedBox(height: 20),
+                      ],
+
                       // Action Button
                       ElevatedButton.icon(
                         onPressed: _isSaving ? null : _executeRotate,
@@ -662,7 +683,9 @@ class _PdfRotateProgressPageState extends State<PdfRotateProgressPage> {
                               )
                             : const Icon(Icons.check_circle_outline_rounded),
                         label: Text(
-                          _isSaving ? 'Processing Rotation...' : 'Save & Apply Rotation',
+                          _isSaving
+                              ? (_isUploading ? 'Uploading Document...' : 'Processing Rotation...')
+                              : 'Save & Apply Rotation',
                           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                         ),
                         style: ElevatedButton.styleFrom(

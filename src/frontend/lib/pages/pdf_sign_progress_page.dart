@@ -1,13 +1,14 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:http/http.dart' as http;
 import '../widgets/app_header.dart';
 import '../widgets/adsense_banner.dart';
+import '../widgets/tool_upload_progress_indicator.dart';
 import '../services/telemetry_service.dart';
 import '../services/api_service.dart';
 import '../services/download_helper.dart';
@@ -50,6 +51,9 @@ class _PdfSignProgressPageState extends State<PdfSignProgressPage> {
 
   // Processing state
   bool _isProcessing = false;
+  bool _isUploading = false;
+  int _uploadSentBytes = 0;
+  int _uploadTotalBytes = 0;
   String? _errorMessage;
   Uint8List? _signedPdfBytes;
 
@@ -132,62 +136,77 @@ class _PdfSignProgressPageState extends State<PdfSignProgressPage> {
       return;
     }
 
+    final totalUploadSize = _file!.bytes!.length + _signatureBytes!.length;
     setState(() {
       _isProcessing = true;
+      _isUploading = true;
+      _uploadSentBytes = 0;
+      _uploadTotalBytes = totalUploadSize;
       _errorMessage = null;
     });
 
     try {
-      final uri = Uri.parse('${ApiService.baseUrl}/tools/sign');
-      final request = http.MultipartRequest('POST', uri);
-
-      // Add PDF document
-      request.files.add(
-        http.MultipartFile.fromBytes(
-          'file',
-          _file!.bytes!,
-          filename: _file!.name,
-        ),
-      );
-
-      // Add Signature PNG image
-      request.files.add(
-        http.MultipartFile.fromBytes(
-          'signature',
-          _signatureBytes!,
-          filename: 'signature.png',
-        ),
-      );
-
       // Convert relative page coordinates to PDF point coordinates
       final targetX = _relativeX * _pdfPageWidth;
       final targetY = _relativeY * _pdfPageHeight;
       final targetWidth = _relativeWidth * _pdfPageWidth;
       final targetHeight = _relativeHeight * _pdfPageHeight;
 
-      request.fields['page'] = _currentPage.toString();
-      request.fields['x'] = targetX.toStringAsFixed(2);
-      request.fields['y'] = targetY.toStringAsFixed(2);
-      request.fields['width'] = targetWidth.toStringAsFixed(2);
-      request.fields['height'] = targetHeight.toStringAsFixed(2);
+      final uploadRes = await ApiService.uploadToolFiles(
+        endpoint: '/tools/sign',
+        fields: {
+          'page': _currentPage.toString(),
+          'x': targetX.toStringAsFixed(2),
+          'y': targetY.toStringAsFixed(2),
+          'width': targetWidth.toStringAsFixed(2),
+          'height': targetHeight.toStringAsFixed(2),
+        },
+        files: [
+          UploadFileItem(
+            field: 'file',
+            filename: _file!.name,
+            bytes: _file!.bytes!,
+          ),
+          UploadFileItem(
+            field: 'signature',
+            filename: 'signature.png',
+            bytes: _signatureBytes!,
+          ),
+        ],
+        onProgress: (sent, total) {
+          if (mounted) {
+            setState(() {
+              _uploadSentBytes = sent;
+              _uploadTotalBytes = total;
+              if (sent >= total && total > 0) {
+                _isUploading = false;
+              }
+            });
+          }
+        },
+      );
 
-      final streamedResponse = await request.send();
-      final response = await http.Response.fromStream(streamedResponse);
-
-      if (response.statusCode == 200) {
+      if (uploadRes.statusCode == 200) {
         setState(() {
           _isProcessing = false;
-          _signedPdfBytes = response.bodyBytes;
+          _isUploading = false;
+          _signedPdfBytes = uploadRes.bytes;
         });
       } else {
+        String detail = 'Server error (${uploadRes.statusCode})';
+        try {
+          detail = utf8.decode(uploadRes.bytes);
+        } catch (_) {}
         setState(() {
           _isProcessing = false;
-          _errorMessage = 'Server error (${response.statusCode}): ${response.body}';
+          _isUploading = false;
+          _errorMessage = detail;
         });
       }
     } catch (e) {
       setState(() {
         _isProcessing = false;
+        _isUploading = false;
         _errorMessage = 'Failed to apply signature: $e';
       });
     }
@@ -696,6 +715,16 @@ class _PdfSignProgressPageState extends State<PdfSignProgressPage> {
 
           const SizedBox(height: 24),
 
+          if (_isProcessing) ...[
+            ToolUploadProgressIndicator(
+              isUploading: _isUploading,
+              sentBytes: _uploadSentBytes,
+              totalBytes: _uploadTotalBytes,
+              processingLabel: 'Embedding cryptographic signature in RAM disk...',
+            ),
+            const SizedBox(height: 16),
+          ],
+
           // Action Button
           ElevatedButton(
             onPressed: _isProcessing ? null : _applySignature,
@@ -706,10 +735,21 @@ class _PdfSignProgressPageState extends State<PdfSignProgressPage> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
             child: _isProcessing
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                ? Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        _isUploading ? 'Uploading Signature & PDF...' : 'Embedding Signature...',
+                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                      ),
+                    ],
                   )
                 : const Text(
                     'Apply Signature',

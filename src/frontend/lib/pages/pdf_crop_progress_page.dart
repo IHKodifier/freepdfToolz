@@ -1,7 +1,7 @@
+import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import '../widgets/app_header.dart';
 import '../widgets/app_footer.dart';
 import '../widgets/adsense_banner.dart';
@@ -10,6 +10,7 @@ import '../services/telemetry_service.dart';
 import '../services/download_helper.dart';
 import '../services/api_service.dart';
 import '../services/pdf_thumbnail_service.dart';
+import '../widgets/tool_upload_progress_indicator.dart';
 import 'pdf_merge_page.dart' show SelectedPdfFile;
 
 /// Dedicated Status & Configuration Workspace for Crop PDF (/crop/process)
@@ -47,6 +48,9 @@ class _PdfCropProgressPageState extends State<PdfCropProgressPage> {
   int _targetPage = 1; // 1-based for UI display
 
   bool _isProcessing = false;
+  bool _isUploading = false;
+  int _uploadSentBytes = 0;
+  int _uploadTotalBytes = 0;
   String? _errorMessage;
 
   // Generated Result
@@ -129,34 +133,47 @@ class _PdfCropProgressPageState extends State<PdfCropProgressPage> {
   Future<void> _applyCrop() async {
     if (_file == null || _file!.bytes == null) return;
 
+    final totalBytes = _file!.bytes!.length;
     setState(() {
       _isProcessing = true;
+      _isUploading = true;
+      _uploadSentBytes = 0;
+      _uploadTotalBytes = totalBytes;
       _errorMessage = null;
     });
 
     try {
-      final uri = Uri.parse('${ApiService.baseUrl}/tools/crop');
-      final request = http.MultipartRequest('POST', uri);
-
-      request.files.add(
-        http.MultipartFile.fromBytes(
-          'file',
-          _file!.bytes!,
-          filename: _file!.name,
-        ),
+      final response = await ApiService.uploadToolFiles(
+        endpoint: '/tools/crop',
+        files: [
+          UploadFileItem(
+            fieldName: 'file',
+            filename: _file!.name,
+            bytes: _file!.bytes!,
+          ),
+        ],
+        fields: {
+          'left': _leftMargin.toString(),
+          'top': _topMargin.toString(),
+          'right': _rightMargin.toString(),
+          'bottom': _bottomMargin.toString(),
+          'apply_to_all': _applyToAll.toString(),
+          'target_page': (_targetPage - 1).toString(),
+        },
+        onProgress: (sent, total) {
+          if (mounted) {
+            setState(() {
+              _uploadSentBytes = sent;
+              _uploadTotalBytes = total;
+              if (sent >= total) {
+                _isUploading = false;
+              }
+            });
+          }
+        },
       );
 
-      request.fields['left'] = _leftMargin.toString();
-      request.fields['top'] = _topMargin.toString();
-      request.fields['right'] = _rightMargin.toString();
-      request.fields['bottom'] = _bottomMargin.toString();
-      request.fields['apply_to_all'] = _applyToAll.toString();
-      request.fields['target_page'] = (_targetPage - 1).toString(); // 0-based for backend
-
-      final streamedResponse = await request.send();
-      final response = await http.Response.fromStream(streamedResponse);
-
-      if (response.statusCode == 200) {
+      if (response.isSuccess) {
         final rawStem = _file!.name.replaceAll(RegExp(r'\.pdf$', caseSensitive: false), '');
         final outName = '${rawStem}_cropped.pdf';
 
@@ -164,6 +181,7 @@ class _PdfCropProgressPageState extends State<PdfCropProgressPage> {
           _resultBytes = response.bodyBytes;
           _resultFilename = outName;
           _isProcessing = false;
+          _isUploading = false;
         });
 
         TelemetryService.trackEvent('crop_completed', {
@@ -174,17 +192,22 @@ class _PdfCropProgressPageState extends State<PdfCropProgressPage> {
       } else {
         String detail = 'Cropping failed with status ${response.statusCode}';
         try {
-          detail = response.body;
-        } catch (_) {}
+          final decoded = jsonDecode(response.bodyString);
+          if (decoded['detail'] != null) detail = decoded['detail'];
+        } catch (_) {
+          if (response.bodyString.isNotEmpty) detail = response.bodyString;
+        }
         setState(() {
           _errorMessage = detail;
           _isProcessing = false;
+          _isUploading = false;
         });
       }
     } catch (e) {
       setState(() {
         _errorMessage = 'Connection error: $e';
         _isProcessing = false;
+        _isUploading = false;
       });
     }
   }
@@ -360,6 +383,21 @@ class _PdfCropProgressPageState extends State<PdfCropProgressPage> {
 
         const SizedBox(height: 32),
 
+        if (_isProcessing) ...[
+          Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 400),
+              child: ToolUploadProgressIndicator(
+                sentBytes: _uploadSentBytes,
+                totalBytes: _uploadTotalBytes,
+                isUploading: _isUploading,
+                processingLabel: 'Cropping PDF Document...',
+                accentColor: const Color(0xFF0284C7),
+              ),
+            ),
+          ),
+        ],
+
         // Primary Action: Crop Button
         Center(
           child: ConstrainedBox(
@@ -377,7 +415,11 @@ class _PdfCropProgressPageState extends State<PdfCropProgressPage> {
                     )
                   : const Icon(Icons.crop_rounded, color: Colors.white),
               label: Text(
-                _isProcessing ? 'Cropping PDF...' : 'Crop PDF',
+                _isProcessing
+                    ? (_isUploading
+                        ? 'Uploading PDF (${(_uploadTotalBytes > 0 ? (_uploadSentBytes / _uploadTotalBytes * 100).toInt() : 0)}%)...'
+                        : 'Cropping PDF...')
+                    : 'Crop PDF',
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
