@@ -2,17 +2,16 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import '../widgets/app_header.dart';
-import '../widgets/app_footer.dart';
 import '../widgets/adsense_banner.dart';
 import '../services/telemetry_service.dart';
 import '../services/api_service.dart';
 import '../services/download_helper.dart';
+import '../services/pdf_thumbnail_service.dart';
 import 'pdf_merge_page.dart' show SelectedPdfFile;
 
 /// Dedicated Status & Configuration Workspace for Sign PDF (/sign/process)
@@ -32,11 +31,12 @@ class PdfSignProgressPage extends StatefulWidget {
 class _PdfSignProgressPageState extends State<PdfSignProgressPage> {
   SelectedPdfFile? _file;
   int _pageCount = 1;
-  int _currentPage = 1; // 1-indexed
+  int _currentPage = 1; // 1-based index
+  PdfThumbnailResult? _thumbnailResult;
+  bool _isLoadingThumbnails = false;
 
   // Signature state
   Uint8List? _signatureBytes;
-  String _signatureSource = 'none'; // 'draw', 'type', 'upload'
 
   // Placement parameters (in relative percentage 0.0 - 1.0)
   double _relativeX = 0.65; // default bottom-rightish
@@ -89,6 +89,21 @@ class _PdfSignProgressPageState extends State<PdfSignProgressPage> {
     } catch (_) {
       _pageCount = 1;
     }
+    _loadThumbnails();
+  }
+
+  Future<void> _loadThumbnails() async {
+    if (_file == null) return;
+    setState(() => _isLoadingThumbnails = true);
+    final result = await PdfThumbnailService.fetchThumbnails(_file!);
+    if (!mounted) return;
+    setState(() {
+      _thumbnailResult = result;
+      _isLoadingThumbnails = false;
+      if (result.isSuccess && result.totalPages > 0) {
+        _pageCount = result.totalPages;
+      }
+    });
   }
 
   Future<void> _openSignatureModal() async {
@@ -101,7 +116,6 @@ class _PdfSignProgressPageState extends State<PdfSignProgressPage> {
     if (result != null && result['bytes'] != null) {
       setState(() {
         _signatureBytes = result['bytes'] as Uint8List;
-        _signatureSource = result['type'] as String? ?? 'draw';
         _errorMessage = null;
       });
     }
@@ -124,7 +138,7 @@ class _PdfSignProgressPageState extends State<PdfSignProgressPage> {
     });
 
     try {
-      final uri = Uri.parse('${ApiService.baseUrl}/api/v1/tools/sign');
+      final uri = Uri.parse('${ApiService.baseUrl}/tools/sign');
       final request = http.MultipartRequest('POST', uri);
 
       // Add PDF document
@@ -470,42 +484,9 @@ class _PdfSignProgressPageState extends State<PdfSignProgressPage> {
                     return Stack(
                       clipBehavior: Clip.none,
                       children: [
-                        // Watermark / Document lines simulation
+                        // Real Page Background
                         Positioned.fill(
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Container(height: 10, width: 90, color: Colors.grey[300]),
-                                const SizedBox(height: 14),
-                                for (int i = 0; i < 9; i++) ...[
-                                  Container(
-                                    height: 5,
-                                    width: double.infinity,
-                                    margin: const EdgeInsets.only(bottom: 7),
-                                    color: Colors.grey[200],
-                                  ),
-                                ],
-                                const Spacer(),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Container(height: 1, width: 80, color: Colors.grey[400]),
-                                    Container(height: 1, width: 80, color: Colors.grey[400]),
-                                  ],
-                                ),
-                                const SizedBox(height: 4),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text('Date', style: TextStyle(fontSize: 8, color: Colors.grey[600])),
-                                    Text('Authorized Signature', style: TextStyle(fontSize: 8, color: Colors.grey[600])),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
+                          child: _buildSignPageBackground(isDark),
                         ),
 
                         // Draggable / Interactive Signature Stamp
@@ -817,6 +798,73 @@ class _PdfSignProgressPageState extends State<PdfSignProgressPage> {
           // Result Ad (Ad #3)
           const Center(
             child: AdSenseBanner(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSignPageBackground(bool isDark) {
+    final pageIndex = _currentPage - 1;
+    final bytes = _thumbnailResult?.getPageBytes(pageIndex);
+    if (bytes != null && bytes.isNotEmpty) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(4),
+        child: Image.memory(
+          bytes,
+          fit: BoxFit.contain,
+          errorBuilder: (context, error, stackTrace) => _buildFallbackDocumentLines(),
+        ),
+      );
+    }
+
+    if (_isLoadingThumbnails) {
+      return const Center(
+        child: SizedBox(
+          width: 28,
+          height: 28,
+          child: CircularProgressIndicator(
+            strokeWidth: 2.5,
+            valueColor: AlwaysStoppedAnimation<Color>(Colors.blueAccent),
+          ),
+        ),
+      );
+    }
+
+    return _buildFallbackDocumentLines();
+  }
+
+  Widget _buildFallbackDocumentLines() {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(height: 10, width: 90, color: Colors.grey[300]),
+          const SizedBox(height: 14),
+          for (int i = 0; i < 9; i++) ...[
+            Container(
+              height: 5,
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 7),
+              color: Colors.grey[200],
+            ),
+          ],
+          const Spacer(),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(height: 1, width: 80, color: Colors.grey[400]),
+              Container(height: 1, width: 80, color: Colors.grey[400]),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Date', style: TextStyle(fontSize: 8, color: Colors.grey[600])),
+              Text('Authorized Signature', style: TextStyle(fontSize: 8, color: Colors.grey[600])),
+            ],
           ),
         ],
       ),

@@ -301,7 +301,7 @@ class AppFooter extends StatelessWidget {
         if (isPdfTools)
           InkWell(
             key: const Key('footer_ocr_btn'),
-            onTap: () => _navigateTo(context, '/ocr'),
+            onTap: () => UrlHelper.openUrl('https://freeocr.me'),
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 4.0),
               child: Text('OCR PDF', style: linkStyle),

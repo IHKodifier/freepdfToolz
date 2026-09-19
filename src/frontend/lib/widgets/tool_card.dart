@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../services/favorites_service.dart';
 import 'semantic_pdf_icon.dart';

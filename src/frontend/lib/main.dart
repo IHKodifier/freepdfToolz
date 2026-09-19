@@ -46,6 +46,7 @@ import 'pages/pdf_sign_page.dart';
 import 'pages/pdf_sign_progress_page.dart';
 import 'widgets/expired_link_view.dart';
 import 'utils/url_strategy_helper.dart';
+import 'utils/url_helper.dart';
 import 'utils/theme_storage_helper.dart';
 
 final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier<ThemeMode>(ThemeStorageHelper.loadTheme());
@@ -85,10 +86,11 @@ class FreeOcrApp extends StatelessWidget {
               );
             }
 
-            // Dedicated OCR route
+            // Dedicated OCR route -> Sister Site Redirect to freeOCR.me
             if (name == '/ocr') {
+              UrlHelper.openUrl('https://freeocr.me');
               return MaterialPageRoute(
-                builder: (context) => const HomePage(),
+                builder: (context) => const PdfToolsHubPage(),
                 settings: settings,
               );
             }

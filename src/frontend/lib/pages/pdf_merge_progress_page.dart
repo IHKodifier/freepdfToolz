@@ -12,6 +12,7 @@ import '../utils/app_limits_config.dart';
 import '../services/telemetry_service.dart';
 import '../services/download_helper.dart';
 import '../services/api_service.dart';
+import '../services/pdf_thumbnail_service.dart';
 import '../main.dart' show themeNotifier;
 import 'pdf_merge_page.dart' show SelectedPdfFile;
 
@@ -40,6 +41,8 @@ class _PdfMergeProgressPageState extends State<PdfMergeProgressPage> {
   Uint8List? _mergedPdfBytes;
   int? _mergedSizeBytes;
   bool _isDragging = false;
+  final Map<String, Uint8List?> _fileThumbnails = {};
+  final Set<String> _loadingThumbnailFiles = {};
 
   @override
   void initState() {
@@ -50,6 +53,30 @@ class _PdfMergeProgressPageState extends State<PdfMergeProgressPage> {
       pageTitle: 'FreePDFToolz — Merging PDF',
     );
     AppLimitsConfig.ensureLoaded();
+    for (final f in _files) {
+      _loadThumbnailForFile(f);
+    }
+  }
+
+  Future<void> _loadThumbnailForFile(SelectedPdfFile file) async {
+    final key = file.name;
+    if (_fileThumbnails.containsKey(key) || _loadingThumbnailFiles.contains(key)) return;
+    _loadingThumbnailFiles.add(key);
+    try {
+      final res = await PdfThumbnailService.fetchThumbnails(file);
+      if (mounted) {
+        setState(() {
+          _fileThumbnails[key] = res.getPageBytes(0);
+          _loadingThumbnailFiles.remove(key);
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _loadingThumbnailFiles.remove(key);
+        });
+      }
+    }
   }
 
   int get _totalSizeBytes => _files.fold(0, (sum, f) => sum + f.sizeBytes);
@@ -181,6 +208,9 @@ class _PdfMergeProgressPageState extends State<PdfMergeProgressPage> {
         _files.addAll(addedFiles);
         _errorMessage = null;
       });
+      for (final f in addedFiles) {
+        _loadThumbnailForFile(f);
+      }
     }
   }
 
@@ -567,19 +597,7 @@ class _PdfMergeProgressPageState extends State<PdfMergeProgressPage> {
                       horizontal: 8,
                       vertical: 2,
                     ),
-                    leading: Container(
-                      width: 34,
-                      height: 34,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFEF4444).withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(
-                        Icons.picture_as_pdf_rounded,
-                        color: Color(0xFFEF4444),
-                        size: 18,
-                      ),
-                    ),
+                    leading: _buildStackedPaperThumbnail(file, isDark),
                     title: Text(
                       file.name,
                       maxLines: 1,
@@ -620,6 +638,110 @@ class _PdfMergeProgressPageState extends State<PdfMergeProgressPage> {
                 );
               },
             ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStackedPaperThumbnail(SelectedPdfFile file, bool isDark) {
+    _loadThumbnailForFile(file);
+    final thumbBytes = _fileThumbnails[file.name];
+    final isLoading = _loadingThumbnailFiles.contains(file.name);
+
+    return SizedBox(
+      width: 42,
+      height: 50,
+      child: Stack(
+        clipBehavior: Clip.none,
+        alignment: Alignment.center,
+        children: [
+          // Back sheet (rotated right 3 degrees)
+          Positioned(
+            top: 2,
+            right: 0,
+            child: Transform.rotate(
+              angle: 0.05,
+              child: Container(
+                width: 32,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF21262D) : const Color(0xFFE2E8F0),
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(
+                    color: isDark ? const Color(0xFF30363D) : const Color(0xFFCBD5E1),
+                    width: 0.8,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          // Middle sheet (rotated left 2 degrees)
+          Positioned(
+            top: 3,
+            left: 0,
+            child: Transform.rotate(
+              angle: -0.04,
+              child: Container(
+                width: 32,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF161B22) : const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(
+                    color: isDark ? const Color(0xFF30363D) : const Color(0xFFCBD5E1),
+                    width: 0.8,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          // Front sheet with real page thumbnail
+          Container(
+            width: 32,
+            height: 42,
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF0D1117) : Colors.white,
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(
+                color: isDark ? const Color(0xFF30363D) : const Color(0xFFCBD5E1),
+                width: 1.0,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.12),
+                  blurRadius: 3,
+                  offset: const Offset(0, 1.5),
+                ),
+              ],
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: thumbBytes != null && thumbBytes.isNotEmpty
+                ? Image.memory(
+                    thumbBytes,
+                    fit: BoxFit.cover,
+                  )
+                : (isLoading
+                    ? const Center(
+                        child: SizedBox(
+                          width: 12,
+                          height: 12,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 1.5,
+                            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFEF4444)),
+                          ),
+                        ),
+                      )
+                    : Container(
+                        color: const Color(0xFFEF4444).withOpacity(0.1),
+                        child: const Center(
+                          child: Icon(
+                            Icons.picture_as_pdf_rounded,
+                            color: Color(0xFFEF4444),
+                            size: 16,
+                          ),
+                        ),
+                      )),
+          ),
         ],
       ),
     );
