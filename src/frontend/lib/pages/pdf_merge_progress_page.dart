@@ -428,7 +428,7 @@ class _PdfMergeProgressPageState extends State<PdfMergeProgressPage> {
                               sentBytes: _thumbnailSentBytes,
                               totalBytes: _thumbnailTotalBytes,
                               isUploading: _isUploadingThumbnails,
-                              processingLabel: 'Generating visual page previews in Linux tmpfs RAM disk...',
+                              processingLabel: 'Generating page thumbnails...',
                               accentColor: const Color(0xFFEF4444),
                             ),
                             const SizedBox(height: 20),

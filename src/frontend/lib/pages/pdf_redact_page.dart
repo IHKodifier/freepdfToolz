@@ -305,20 +305,14 @@ class _PdfRedactPageState extends State<PdfRedactPage> {
                             const SizedBox(height: 24),
                             ElevatedButton.icon(
                               onPressed: _pickFile,
-                              icon: const Icon(Icons.file_open_rounded, color: Colors.white),
-                              label: const Text(
-                                'Select PDF File',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                ),
-                              ),
+                              icon: const Icon(Icons.file_open_rounded),
+                              label: const Text('Select PDF File'),
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: _redactColor,
-                                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                                backgroundColor: Theme.of(context).colorScheme.primary,
+                                foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.circular(10),
                                 ),
                                 elevation: 0,
                               ),

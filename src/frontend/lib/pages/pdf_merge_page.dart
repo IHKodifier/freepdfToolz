@@ -429,20 +429,15 @@ class _PdfMergePageState extends State<PdfMergePage> {
                 icon: const Icon(Icons.add_rounded, size: 18),
                 label: const Text('Select PDF Files'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: isDark
-                      ? const Color(0xFF1E293B)
-                      : const Color(0xFFF1F5F9),
-                  foregroundColor: isDark ? Colors.white : Colors.black87,
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
                   elevation: 0,
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 12,
+                    horizontal: 28,
+                    vertical: 16,
                   ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
-                    side: BorderSide(
-                      color: isDark ? Colors.white12 : Colors.black12,
-                    ),
                   ),
                 ),
               ),

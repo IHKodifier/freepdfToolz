@@ -653,7 +653,7 @@ class _PdfDeletePagesProgressPageState extends State<PdfDeletePagesProgressPage>
                           sentBytes: _thumbnailSentBytes,
                           totalBytes: _thumbnailTotalBytes,
                           isUploading: _isUploadingThumbnails,
-                          processingLabel: 'Generating visual page previews in Linux tmpfs RAM disk...',
+                          processingLabel: 'Generating page thumbnails...',
                           accentColor: const Color(0xFFCF222E),
                         ),
                       ],

@@ -377,7 +377,7 @@ class _PdfCropProgressPageState extends State<PdfCropProgressPage> {
             sentBytes: _thumbnailSentBytes,
             totalBytes: _thumbnailTotalBytes,
             isUploading: _isUploadingThumbnails,
-            processingLabel: 'Generating visual page previews in Linux tmpfs RAM disk...',
+            processingLabel: 'Generating page thumbnails...',
             accentColor: const Color(0xFF0284C7),
           ),
           const SizedBox(height: 20),

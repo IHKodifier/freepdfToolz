@@ -305,8 +305,8 @@ class _PdfNumberPagesPageState extends State<PdfNumberPagesPage> {
                               icon: const Icon(Icons.file_upload_outlined, size: 20),
                               label: const Text('Select PDF File'),
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF4F46E5),
-                                foregroundColor: Colors.white,
+                                backgroundColor: Theme.of(context).colorScheme.primary,
+                                foregroundColor: Theme.of(context).colorScheme.onPrimary,
                                 padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
                                 textStyle: const TextStyle(
                                   fontSize: 15,
@@ -314,7 +314,7 @@ class _PdfNumberPagesPageState extends State<PdfNumberPagesPage> {
                                   letterSpacing: 0.2,
                                 ),
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.circular(10),
                                 ),
                                 elevation: 0,
                               ),

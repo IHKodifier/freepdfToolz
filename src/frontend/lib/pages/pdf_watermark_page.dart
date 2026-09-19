@@ -306,8 +306,8 @@ class _PdfWatermarkPageState extends State<PdfWatermarkPage> {
                                 style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
                               ),
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF3B82F6),
-                                foregroundColor: Colors.white,
+                                backgroundColor: Theme.of(context).colorScheme.primary,
+                                foregroundColor: Theme.of(context).colorScheme.onPrimary,
                                 padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
                                 elevation: 0,
                                 shape: RoundedRectangleBorder(

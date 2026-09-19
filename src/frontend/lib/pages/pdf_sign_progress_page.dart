@@ -343,7 +343,7 @@ class _PdfSignProgressPageState extends State<PdfSignProgressPage> {
                       sentBytes: _thumbnailSentBytes,
                       totalBytes: _thumbnailTotalBytes,
                       isUploading: _isUploadingThumbnails,
-                      processingLabel: 'Generating visual page previews in Linux tmpfs RAM disk...',
+                      processingLabel: 'Generating page thumbnails...',
                       accentColor: const Color(0xFF0D9488),
                     ),
                     const SizedBox(height: 20),

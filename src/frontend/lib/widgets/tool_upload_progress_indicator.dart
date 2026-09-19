@@ -134,14 +134,17 @@ class ToolUploadProgressIndicator extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                isUploading ? 'Streaming socket data (polled every 600ms)' : 'Server execution underway',
-                style: TextStyle(
-                  fontSize: 11,
-                  color: isDark ? Colors.grey.shade500 : Colors.grey.shade500,
-                  fontStyle: FontStyle.italic,
-                ),
-              ),
+              if (!isUploading)
+                Text(
+                  'Server execution underway',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: isDark ? Colors.grey.shade500 : Colors.grey.shade500,
+                    fontStyle: FontStyle.italic,
+                  ),
+                )
+              else
+                const SizedBox.shrink(),
               if (isUploading)
                 Text(
                   '${formatBytes(sentBytes)} / ${formatBytes(totalBytes)}',
