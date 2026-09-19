@@ -24,7 +24,7 @@ enum AnnotationToolType {
 class AnnotationItem {
   final int pageIndex; // 0-indexed
   final AnnotationToolType tool;
-  final Rect relativeRect; // Coordinates relative to canvas (0.0 to 1.0)
+  final Rect relativeRect; // Coordinates relative to page (0.0 to 1.0)
   final Color color;
   final String content;
 
@@ -89,6 +89,11 @@ class _PdfAnnotateProgressPageState extends State<PdfAnnotateProgressPage> {
   int _currentPage = 1; // 1-indexed for display
   int _pageCount = 1;
 
+  // Zoom control state: 100% by default, zoomable up to 175% (0.75 - 1.75)
+  double _zoom = 1.0;
+  final ScrollController _horizontalScrollController = ScrollController();
+  final ScrollController _verticalScrollController = ScrollController();
+
   PdfThumbnailResult? _thumbnailResult;
   bool _isLoadingThumbnails = false;
   bool _isUploadingThumbnails = false;
@@ -140,6 +145,13 @@ class _PdfAnnotateProgressPageState extends State<PdfAnnotateProgressPage> {
   }
 
   @override
+  void dispose() {
+    _horizontalScrollController.dispose();
+    _verticalScrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (_file == null) {
@@ -186,8 +198,11 @@ class _PdfAnnotateProgressPageState extends State<PdfAnnotateProgressPage> {
       _thumbnailTotalBytes = file.sizeBytes;
     });
 
+    // High fidelity rendering (dpi=150 / maxDimension=1800) for crystal clear 100% - 175% zoom editing
     final result = await PdfThumbnailService.fetchThumbnails(
       file,
+      dpi: 150,
+      maxDimension: 1800,
       onProgress: (sent, total) {
         if (mounted) {
           setState(() {
@@ -222,6 +237,44 @@ class _PdfAnnotateProgressPageState extends State<PdfAnnotateProgressPage> {
     });
   }
 
+  double _getCurrentPageWidth() {
+    if (_thumbnailResult != null && _thumbnailResult!.isSuccess) {
+      final pageIndex = _currentPage - 1;
+      if (pageIndex < _thumbnailResult!.pages.length) {
+        return _thumbnailResult!.pages[pageIndex].width;
+      }
+    }
+    return 595.0; // Standard A4 points
+  }
+
+  double _getCurrentPageHeight() {
+    if (_thumbnailResult != null && _thumbnailResult!.isSuccess) {
+      final pageIndex = _currentPage - 1;
+      if (pageIndex < _thumbnailResult!.pages.length) {
+        return _thumbnailResult!.pages[pageIndex].height;
+      }
+    }
+    return 842.0; // Standard A4 points
+  }
+
+  void _zoomIn() {
+    setState(() {
+      _zoom = (_zoom + 0.25).clamp(0.75, 1.75);
+    });
+  }
+
+  void _zoomOut() {
+    setState(() {
+      _zoom = (_zoom - 0.25).clamp(0.75, 1.75);
+    });
+  }
+
+  void _resetZoom() {
+    setState(() {
+      _zoom = 1.0;
+    });
+  }
+
   Future<void> _saveAndDownload() async {
     if (_file == null) return;
 
@@ -231,7 +284,9 @@ class _PdfAnnotateProgressPageState extends State<PdfAnnotateProgressPage> {
       fileSizeKb: (_file?.sizeBytes ?? 0) / 1024,
     );
 
-    final pdfPayload = _annotations.map((a) => a.toJson(595.0, 842.0)).toList();
+    final pageWidth = _getCurrentPageWidth();
+    final pageHeight = _getCurrentPageHeight();
+    final pdfPayload = _annotations.map((a) => a.toJson(pageWidth, pageHeight)).toList();
 
     final fields = <String, String>{
       if (_sessionFileId != null) 'session_file_id': _sessionFileId!,
@@ -348,10 +403,10 @@ class _PdfAnnotateProgressPageState extends State<PdfAnnotateProgressPage> {
           pageIndex: _currentPage - 1,
           tool: AnnotationToolType.note,
           relativeRect: Rect.fromLTWH(
-            (relativePoint.dx - 0.03).clamp(0.0, 0.94),
-            (relativePoint.dy - 0.03).clamp(0.0, 0.94),
-            0.06,
-            0.06,
+            (relativePoint.dx - 0.025).clamp(0.0, 0.95),
+            (relativePoint.dy - 0.025).clamp(0.0, 0.95),
+            0.05,
+            0.05,
           ),
           color: _activeColor,
           content: noteText,
@@ -380,7 +435,7 @@ class _PdfAnnotateProgressPageState extends State<PdfAnnotateProgressPage> {
             const SizedBox(height: 24),
 
             ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 1100),
+              constraints: const BoxConstraints(maxWidth: 1200),
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Column(
@@ -444,7 +499,7 @@ class _PdfAnnotateProgressPageState extends State<PdfAnnotateProgressPage> {
                         sentBytes: _thumbnailSentBytes,
                         totalBytes: _thumbnailTotalBytes,
                         isUploading: _isUploadingThumbnails,
-                        processingLabel: 'Generating preview thumbnails...',
+                        processingLabel: 'Rendering full-scale document pages at 100% original fidelity...',
                         accentColor: const Color(0xFFD97706),
                       ),
                       const SizedBox(height: 20),
@@ -504,7 +559,7 @@ class _PdfAnnotateProgressPageState extends State<PdfAnnotateProgressPage> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '$_pageCount Pages  •  $sizeKb KB',
+                  '$_pageCount Pages  •  $sizeKb KB  •  Full 100% Scale Editor',
                   style: TextStyle(
                     fontSize: 13,
                     color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
@@ -526,21 +581,21 @@ class _PdfAnnotateProgressPageState extends State<PdfAnnotateProgressPage> {
   Widget _buildWorkspacePanel(ThemeData theme, bool isDark) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final isWide = constraints.maxWidth > 800;
+        final isWide = constraints.maxWidth > 850;
 
         return isWide
             ? Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Canvas (Left 60%)
+                  // Full Scale Document Canvas (Left 65%)
                   Expanded(
-                    flex: 60,
+                    flex: 65,
                     child: _buildCanvasSection(theme, isDark),
                   ),
-                  const SizedBox(width: 24),
-                  // Toolbar & Controls (Right 40%)
+                  const SizedBox(width: 20),
+                  // Drawing Toolbar & Controls (Right 35%)
                   Expanded(
-                    flex: 40,
+                    flex: 35,
                     child: _buildToolbarAndControls(theme, isDark),
                   ),
                 ],
@@ -548,7 +603,7 @@ class _PdfAnnotateProgressPageState extends State<PdfAnnotateProgressPage> {
             : Column(
                 children: [
                   _buildToolbarAndControls(theme, isDark),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 20),
                   _buildCanvasSection(theme, isDark),
                 ],
               );
@@ -782,12 +837,17 @@ class _PdfAnnotateProgressPageState extends State<PdfAnnotateProgressPage> {
   }
 
   Widget _buildCanvasSection(ThemeData theme, bool isDark) {
+    final pageWidth = _getCurrentPageWidth();
+    final pageHeight = _getCurrentPageHeight();
+    final displayW = pageWidth * _zoom;
+    final displayH = pageHeight * _zoom;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Page Navigation Header
+        // Navigation & 100% Zoom Control Header
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(
             color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
             borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
@@ -798,146 +858,205 @@ class _PdfAnnotateProgressPageState extends State<PdfAnnotateProgressPage> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              IconButton(
-                key: const Key('annotate_prev_page_btn'),
-                icon: const Icon(Icons.chevron_left_rounded),
-                onPressed: _currentPage > 1
-                    ? () => setState(() => _currentPage--)
-                    : null,
-                tooltip: 'Previous Page',
+              // Page Navigation
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    key: const Key('annotate_prev_page_btn'),
+                    icon: const Icon(Icons.chevron_left_rounded),
+                    onPressed: _currentPage > 1
+                        ? () => setState(() => _currentPage--)
+                        : null,
+                    tooltip: 'Previous Page',
+                  ),
+                  Text(
+                    'Page $_currentPage of $_pageCount',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white : const Color(0xFF0F172A),
+                    ),
+                  ),
+                  IconButton(
+                    key: const Key('annotate_next_page_btn'),
+                    icon: const Icon(Icons.chevron_right_rounded),
+                    onPressed: _currentPage < _pageCount
+                        ? () => setState(() => _currentPage++)
+                        : null,
+                    tooltip: 'Next Page',
+                  ),
+                ],
               ),
-              Text(
-                'Page $_currentPage of $_pageCount',
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white : const Color(0xFF0F172A),
-                ),
-              ),
-              IconButton(
-                key: const Key('annotate_next_page_btn'),
-                icon: const Icon(Icons.chevron_right_rounded),
-                onPressed: _currentPage < _pageCount
-                    ? () => setState(() => _currentPage++)
-                    : null,
-                tooltip: 'Next Page',
+
+              // 100% Scale & Up to 175% Zoom Toolbar
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    key: const Key('annotate_zoom_out_btn'),
+                    icon: const Icon(Icons.zoom_out_rounded, size: 20),
+                    onPressed: _zoom > 0.75 ? _zoomOut : null,
+                    tooltip: 'Zoom Out (min 75%)',
+                  ),
+                  InkWell(
+                    key: const Key('annotate_zoom_reset_btn'),
+                    onTap: _resetZoom,
+                    borderRadius: BorderRadius.circular(6),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: _zoom == 1.0
+                            ? const Color(0xFFD97706).withAlpha(25)
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        '${(_zoom * 100).round()}%',
+                        key: const Key('annotate_zoom_level_text'),
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: _zoom == 1.0
+                              ? const Color(0xFFD97706)
+                              : (isDark ? Colors.white70 : Colors.black87),
+                        ),
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    key: const Key('annotate_zoom_in_btn'),
+                    icon: const Icon(Icons.zoom_in_rounded, size: 20),
+                    onPressed: _zoom < 1.75 ? _zoomIn : null,
+                    tooltip: 'Zoom In (max 175%)',
+                  ),
+                ],
               ),
             ],
           ),
         ),
 
-        // Interactive Canvas Container
+        // Full 100% Original Page Interactive Canvas Viewport
         Container(
           key: const Key('annotate_preview_canvas'),
-          height: 520,
+          height: 650,
           decoration: BoxDecoration(
-            color: isDark ? Colors.grey[950] : Colors.grey[200],
+            color: isDark ? const Color(0xFF0B0F19) : const Color(0xFFE2E8F0),
             borderRadius: const BorderRadius.vertical(bottom: Radius.circular(12)),
             border: Border(
-              left: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
-              right: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
-              bottom: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+              left: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
+              right: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
+              bottom: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
             ),
           ),
-          child: Center(
-            child: AspectRatio(
-              aspectRatio: 595.0 / 842.0,
-              child: Container(
-                margin: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(4),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withAlpha(30),
-                      blurRadius: 10,
-                      spreadRadius: 2,
-                    ),
-                  ],
-                ),
-                child: LayoutBuilder(
-                  builder: (ctx, constraints) {
-                    final canvasW = constraints.maxWidth;
-                    final canvasH = constraints.maxHeight;
-
-                    return GestureDetector(
-                      onTapUp: (details) {
-                        if (_activeTool == AnnotationToolType.note) {
-                          final relPoint = Offset(
-                            details.localPosition.dx / canvasW,
-                            details.localPosition.dy / canvasH,
-                          );
-                          _promptStickyNoteDialog(relPoint);
-                        }
-                      },
-                      onPanStart: (details) {
-                        if (_activeTool != AnnotationToolType.note) {
-                          setState(() {
-                            _dragStart = details.localPosition;
-                            _dragCurrent = details.localPosition;
-                          });
-                        }
-                      },
-                      onPanUpdate: (details) {
-                        if (_dragStart != null) {
-                          setState(() {
-                            _dragCurrent = details.localPosition;
-                          });
-                        }
-                      },
-                      onPanEnd: (details) {
-                        if (_dragStart != null && _dragCurrent != null) {
-                          final p0 = _dragStart!;
-                          final p1 = _dragCurrent!;
-                          final left = math.min(p0.dx, p1.dx) / canvasW;
-                          final top = math.min(p0.dy, p1.dy) / canvasH;
-                          final right = math.max(p0.dx, p1.dx) / canvasW;
-                          final bottom = math.max(p0.dy, p1.dy) / canvasH;
-
-                          final w = right - left;
-                          final h = bottom - top;
-
-                          // Only add if significant drag
-                          if (w > 0.01 && h > 0.005) {
-                            setState(() {
-                              _annotations.add(AnnotationItem(
-                                pageIndex: _currentPage - 1,
-                                tool: _activeTool,
-                                relativeRect: Rect.fromLTRB(
-                                  left.clamp(0.0, 1.0),
-                                  top.clamp(0.0, 1.0),
-                                  right.clamp(0.0, 1.0),
-                                  bottom.clamp(0.0, 1.0),
-                                ),
-                                color: _activeColor,
-                              ));
-                            });
-                          }
-                          setState(() {
-                            _dragStart = null;
-                            _dragCurrent = null;
-                          });
-                        }
-                      },
-                      child: Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          // Thumbnail Page Background
-                          Positioned.fill(
-                            child: _buildThumbnailBackground(),
+          child: Scrollbar(
+            controller: _horizontalScrollController,
+            thumbVisibility: true,
+            child: SingleChildScrollView(
+              controller: _horizontalScrollController,
+              scrollDirection: Axis.horizontal,
+              child: Scrollbar(
+                controller: _verticalScrollController,
+                thumbVisibility: true,
+                child: SingleChildScrollView(
+                  controller: _verticalScrollController,
+                  scrollDirection: Axis.vertical,
+                  padding: const EdgeInsets.all(24),
+                  child: Center(
+                    child: Container(
+                      width: displayW,
+                      height: displayH,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(4),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withAlpha(40),
+                            blurRadius: 16,
+                            spreadRadius: 2,
+                            offset: const Offset(0, 4),
                           ),
-
-                          // Existing Annotations on current page
-                          ..._annotations
-                              .where((a) => a.pageIndex == _currentPage - 1)
-                              .map((a) => _buildRenderedAnnotation(a, canvasW, canvasH)),
-
-                          // Active Drag Box Preview
-                          if (_dragStart != null && _dragCurrent != null)
-                            _buildActiveDragPreview(canvasW, canvasH),
                         ],
                       ),
-                    );
-                  },
+                      child: GestureDetector(
+                        onTapUp: (details) {
+                          if (_activeTool == AnnotationToolType.note) {
+                            final relPoint = Offset(
+                              details.localPosition.dx / displayW,
+                              details.localPosition.dy / displayH,
+                            );
+                            _promptStickyNoteDialog(relPoint);
+                          }
+                        },
+                        onPanStart: (details) {
+                          if (_activeTool != AnnotationToolType.note) {
+                            setState(() {
+                              _dragStart = details.localPosition;
+                              _dragCurrent = details.localPosition;
+                            });
+                          }
+                        },
+                        onPanUpdate: (details) {
+                          if (_dragStart != null) {
+                            setState(() {
+                              _dragCurrent = details.localPosition;
+                            });
+                          }
+                        },
+                        onPanEnd: (details) {
+                          if (_dragStart != null && _dragCurrent != null) {
+                            final p0 = _dragStart!;
+                            final p1 = _dragCurrent!;
+                            final left = math.min(p0.dx, p1.dx) / displayW;
+                            final top = math.min(p0.dy, p1.dy) / displayH;
+                            final right = math.max(p0.dx, p1.dx) / displayW;
+                            final bottom = math.max(p0.dy, p1.dy) / displayH;
+
+                            final w = right - left;
+                            final h = bottom - top;
+
+                            // Only add if user dragged an actual region
+                            if (w > 0.005 && h > 0.003) {
+                              setState(() {
+                                _annotations.add(AnnotationItem(
+                                  pageIndex: _currentPage - 1,
+                                  tool: _activeTool,
+                                  relativeRect: Rect.fromLTRB(
+                                    left.clamp(0.0, 1.0),
+                                    top.clamp(0.0, 1.0),
+                                    right.clamp(0.0, 1.0),
+                                    bottom.clamp(0.0, 1.0),
+                                  ),
+                                  color: _activeColor,
+                                ));
+                              });
+                            }
+                            setState(() {
+                              _dragStart = null;
+                              _dragCurrent = null;
+                            });
+                          }
+                        },
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            // Full Resolution 100% Page Content
+                            Positioned.fill(
+                              child: _buildFullPageBackground(displayW, displayH),
+                            ),
+
+                            // Existing Annotations Scaled to Current Zoom
+                            ..._annotations
+                                .where((a) => a.pageIndex == _currentPage - 1)
+                                .map((a) => _buildRenderedAnnotation(a, displayW, displayH)),
+
+                            // Active Drag Box Preview
+                            if (_dragStart != null && _dragCurrent != null)
+                              _buildActiveDragPreview(),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -947,20 +1066,25 @@ class _PdfAnnotateProgressPageState extends State<PdfAnnotateProgressPage> {
     );
   }
 
-  Widget _buildThumbnailBackground() {
+  Widget _buildFullPageBackground(double displayW, double displayH) {
     if (_thumbnailResult != null && _thumbnailResult!.isSuccess) {
       final pageIndex = _currentPage - 1;
       if (pageIndex < _thumbnailResult!.pages.length) {
         final pageItem = _thumbnailResult!.pages[pageIndex];
         return Image.memory(
           pageItem.imageBytes,
-          fit: BoxFit.contain,
+          width: displayW,
+          height: displayH,
+          fit: BoxFit.fill,
+          filterQuality: FilterQuality.high,
         );
       }
     }
 
     return Container(
       color: Colors.white,
+      width: displayW,
+      height: displayH,
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -968,8 +1092,8 @@ class _PdfAnnotateProgressPageState extends State<PdfAnnotateProgressPage> {
             Icon(Icons.description_outlined, size: 48, color: Colors.grey.shade400),
             const SizedBox(height: 8),
             Text(
-              'Page $_currentPage Preview',
-              style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+              'Page $_currentPage (100% Original Resolution)',
+              style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
             ),
           ],
         ),
@@ -1000,7 +1124,7 @@ class _PdfAnnotateProgressPageState extends State<PdfAnnotateProgressPage> {
           child: Align(
             alignment: Alignment.bottomCenter,
             child: Container(
-              height: 3,
+              height: 3 * _zoom,
               color: item.color,
             ),
           ),
@@ -1012,7 +1136,7 @@ class _PdfAnnotateProgressPageState extends State<PdfAnnotateProgressPage> {
           child: Align(
             alignment: Alignment.center,
             child: Container(
-              height: 2,
+              height: 2 * _zoom,
               color: item.color,
             ),
           ),
@@ -1023,7 +1147,7 @@ class _PdfAnnotateProgressPageState extends State<PdfAnnotateProgressPage> {
           rect: rect,
           child: Container(
             decoration: BoxDecoration(
-              border: Border.all(color: item.color, width: 2),
+              border: Border.all(color: item.color, width: 2 * _zoom),
             ),
           ),
         );
@@ -1039,14 +1163,14 @@ class _PdfAnnotateProgressPageState extends State<PdfAnnotateProgressPage> {
                 shape: BoxShape.circle,
                 boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)],
               ),
-              child: const Icon(Icons.comment, size: 16, color: Colors.white),
+              child: Icon(Icons.comment, size: 16 * _zoom, color: Colors.white),
             ),
           ),
         );
     }
   }
 
-  Widget _buildActiveDragPreview(double canvasW, double canvasH) {
+  Widget _buildActiveDragPreview() {
     final p0 = _dragStart!;
     final p1 = _dragCurrent!;
     final left = math.min(p0.dx, p1.dx);
@@ -1066,7 +1190,7 @@ class _PdfAnnotateProgressPageState extends State<PdfAnnotateProgressPage> {
               : Colors.transparent,
           border: Border.all(
             color: _activeColor,
-            width: 2,
+            width: 2 * _zoom,
             style: BorderStyle.solid,
           ),
         ),

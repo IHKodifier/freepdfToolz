@@ -188,4 +188,63 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.textContaining('Page 1 of 3'), findsOneWidget);
   });
+
+  testWidgets('Zoom controls increment up to 175% and decrement to 75%', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(1280, 1200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+
+    final mockBytes = createMockPdfBytesWithPages(2);
+    final mockFile = SelectedPdfFile(
+      name: 'Contract.pdf',
+      sizeBytes: 1024 * 100,
+      bytes: mockBytes,
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(home: PdfAnnotateProgressPage(file: mockFile)),
+    );
+    await tester.pumpAndSettle();
+
+    // Initial zoom is 100%
+    expect(find.byKey(const Key('annotate_zoom_level_text')), findsOneWidget);
+    expect(find.text('100%'), findsOneWidget);
+
+    final zoomInBtn = find.byKey(const Key('annotate_zoom_in_btn'));
+    final zoomOutBtn = find.byKey(const Key('annotate_zoom_out_btn'));
+    final zoomResetBtn = find.byKey(const Key('annotate_zoom_reset_btn'));
+
+    // Zoom in: 100% -> 125%
+    await tester.tap(zoomInBtn);
+    await tester.pumpAndSettle();
+    expect(find.text('125%'), findsOneWidget);
+
+    // Zoom in: 125% -> 150%
+    await tester.tap(zoomInBtn);
+    await tester.pumpAndSettle();
+    expect(find.text('150%'), findsOneWidget);
+
+    // Zoom in: 150% -> 175%
+    await tester.tap(zoomInBtn);
+    await tester.pumpAndSettle();
+    expect(find.text('175%'), findsOneWidget);
+
+    // Zoom in capped at 175%
+    await tester.tap(zoomInBtn);
+    await tester.pumpAndSettle();
+    expect(find.text('175%'), findsOneWidget);
+
+    // Zoom out: 175% -> 150%
+    await tester.tap(zoomOutBtn);
+    await tester.pumpAndSettle();
+    expect(find.text('150%'), findsOneWidget);
+
+    // Reset zoom back to 100%
+    await tester.tap(zoomResetBtn);
+    await tester.pumpAndSettle();
+    expect(find.text('100%'), findsOneWidget);
+  });
 }
+

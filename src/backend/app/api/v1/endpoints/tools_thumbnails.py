@@ -110,7 +110,7 @@ async def render_thumbnails_endpoint(
                 )
 
         total_pages = doc.page_count
-        target_dim = max(100, min(max_dimension or 200, 600))
+        target_dim = max(100, min(max_dimension or 200, 2400))
         start_idx = max(0, min(page_offset or 0, total_pages))
 
         # Determine effective batch limit
@@ -128,23 +128,28 @@ async def render_thumbnails_endpoint(
             page = doc.load_page(i)
             rect = page.rect
 
-            # Scale to actual thumbnail bounding box (e.g. max 200px)
-            scale = min(target_dim / max(rect.width, 1.0), target_dim / max(rect.height, 1.0))
-            scale = min(scale, 1.0)  # Never upscale tiny pages
+            # If dpi is provided, scale based on dpi (72 dpi = 1.0), otherwise scale to target bounding dimension
+            if dpi is not None and dpi > 0:
+                scale = min(max(dpi, 36), 300) / 72.0
+            else:
+                scale = min(target_dim / max(rect.width, 1.0), target_dim / max(rect.height, 1.0))
+                if target_dim <= 600:
+                    scale = min(scale, 1.0)  # Never upscale tiny thumbnail pages
             matrix = fitz.Matrix(scale, scale)
 
             # Render without alpha channel for 2-3x faster rasterization and lower memory
             pix = page.get_pixmap(matrix=matrix, alpha=False)
 
-            # Compress as WebP if supported, fallback to compact JPEG (quality 65)
+            # High fidelity JPEG compression
             try:
-                img_bytes = pix.tobytes("webp", quality=65)
-                mime_type = "image/webp"
-            except Exception:
-                img_bytes = pix.tobytes("jpeg", jpg_quality=65)
+                img_bytes = pix.tobytes("jpeg", jpg_quality=80)
                 mime_type = "image/jpeg"
+            except Exception:
+                img_bytes = pix.tobytes("png")
+                mime_type = "image/png"
 
             b64_img = base64.b64encode(img_bytes).decode("utf-8")
+
 
             pages_data.append({
                 "page_index": i,
