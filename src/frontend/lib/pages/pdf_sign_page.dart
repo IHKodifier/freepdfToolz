@@ -287,9 +287,12 @@ class _PdfSignPageState extends State<PdfSignPage> {
                             icon: const Icon(Icons.folder_open_rounded),
                             label: const Text('Select PDF File'),
                             style: ElevatedButton.styleFrom(
+                              backgroundColor: Theme.of(context).colorScheme.primary,
+                              foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                              elevation: 0,
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 28,
-                                vertical: 14,
+                                vertical: 16,
                               ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10),

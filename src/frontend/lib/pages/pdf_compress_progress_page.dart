@@ -323,7 +323,7 @@ class _PdfCompressProgressPageState extends State<PdfCompressProgressPage> {
                       sentBytes: _thumbnailSentBytes,
                       totalBytes: _thumbnailTotalBytes,
                       isUploading: _isUploadingThumbnail,
-                      processingLabel: 'Generating visual page previews in Linux tmpfs RAM disk...',
+                      processingLabel: 'Generating page thumbnails...',
                     ),
                     const SizedBox(height: 20),
                   ],

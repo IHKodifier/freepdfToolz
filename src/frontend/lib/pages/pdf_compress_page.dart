@@ -307,10 +307,13 @@ class _PdfCompressPageState extends State<PdfCompressPage> {
                             icon: const Icon(Icons.file_upload_outlined),
                             label: const Text('Select PDF File'),
                             style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+                              backgroundColor: Theme.of(context).colorScheme.primary,
+                              foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10),
                               ),
+                              elevation: 0,
                             ),
                           ),
                         ],

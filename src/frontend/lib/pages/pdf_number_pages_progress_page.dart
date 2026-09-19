@@ -357,7 +357,7 @@ class _PdfNumberPagesProgressPageState extends State<PdfNumberPagesProgressPage>
                           sentBytes: _thumbnailSentBytes,
                           totalBytes: _thumbnailTotalBytes,
                           isUploading: _isUploadingThumbnails,
-                          processingLabel: 'Generating visual page previews in Linux tmpfs RAM disk...',
+                          processingLabel: 'Generating page thumbnails...',
                           accentColor: const Color(0xFF4F46E5),
                         ),
                       ],

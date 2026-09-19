@@ -299,8 +299,8 @@ class _PdfExtractPagesPageState extends State<PdfExtractPagesPage> {
                               icon: const Icon(Icons.folder_open_rounded),
                               label: const Text('Select PDF File'),
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF0969DA),
-                                foregroundColor: Colors.white,
+                                backgroundColor: Theme.of(context).colorScheme.primary,
+                                foregroundColor: Theme.of(context).colorScheme.onPrimary,
                                 padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(10),

@@ -292,21 +292,21 @@ class _ToolPlaceholderPageState extends State<ToolPlaceholderPage> {
                                   runSpacing: 8,
                                   alignment: WrapAlignment.center,
                                   children: [
-                                    ElevatedButton.icon(
-                                      key: const Key('placeholder_select_btn'),
-                                      onPressed: _pickFile,
-                                      icon: const Icon(Icons.file_open_rounded, size: 18),
-                                      label: const Text('Select PDF File'),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: const Color(0xFF6366F1),
-                                        foregroundColor: Colors.white,
-                                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(10),
-                                        ),
-                                        elevation: 0,
-                                      ),
-                                    ),
+                                     ElevatedButton.icon(
+                                       key: const Key('placeholder_select_btn'),
+                                       onPressed: _pickFile,
+                                       icon: const Icon(Icons.file_open_rounded, size: 18),
+                                       label: const Text('Select PDF File'),
+                                       style: ElevatedButton.styleFrom(
+                                         backgroundColor: Theme.of(context).colorScheme.primary,
+                                         foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                                         padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
+                                         shape: RoundedRectangleBorder(
+                                           borderRadius: BorderRadius.circular(10),
+                                         ),
+                                         elevation: 0,
+                                       ),
+                                     ),
                                     OutlinedButton.icon(
                                       onPressed: () {
                                         Navigator.of(context).pushNamed('/hub');
